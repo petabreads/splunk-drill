@@ -162,7 +162,7 @@ body.deck-open .topbar { display: none; }
 .dslide .gist .gsteps { padding-left: 1.4em; gap: 4px; }
 .dslide .gist .gsteps li.sl { display: list-item; margin: 0; }
 .dslide .gist .gsteps li::marker { color: var(--accent); font-family: var(--mono); font-size: 0.85em; }
-.dslide .gist .gfull { align-self: flex-start; padding: 2px 10px; font-size: 0.8rem; border-radius: 6px; background: transparent; }
+.dslide .gist .gfull { align-self: flex-start; padding: 8px 14px; min-height: 40px; margin-top: 8px; touch-action: manipulation; font-size: 0.82rem; border-radius: 6px; background: transparent; }
 .dslide .gist .gtext { border-top: 1px dashed var(--line); padding-top: 8px; color: var(--muted); }
 .dslide .sl.on { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
 .dslide ul, .dslide ol { margin: 0; padding-left: 1.25em; display: flex; flex-direction: column; gap: 10px; }
@@ -226,13 +226,59 @@ code.nm, .nm { color: var(--accent); font-family: var(--mono); font-size: 0.92em
 .dtoast { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; display: flex; gap: 10px; align-items: center; z-index: 3; white-space: nowrap; }
 .dtoast[hidden] { display: none; }
 .dtoast button { padding: 4px 10px; font-size: 0.8rem; }
+/* ---- Topics: one row per exam section, objectives with their own actions ---- */
+.topics .sec { padding: 0; overflow: hidden; }
+.topics .sechd { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; background: transparent; border: 0; border-radius: 0; padding: 10px 12px 4px; }
+.topics .snum { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); flex: none; min-width: 2.2em; }
+.topics .sname { flex: 1; min-width: 0; font-weight: 600; }
+.topics .sw { color: var(--muted); font-size: 0.78rem; font-weight: 400; margin-left: 6px; }
+.topics .chev { flex: none; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); margin: 0 4px 4px; }
+.topics .sec.open .chev { transform: rotate(-135deg); margin: 4px 4px 0; }
+.topics .sec .bar { margin: 4px 12px 0 calc(12px + 2.2em + 10px); }
+.topics .smeta { padding: 4px 12px 10px calc(12px + 2.2em + 10px); font-size: 0.78rem; }
+.tobjs { display: flex; flex-direction: column; gap: 6px; padding: 0 12px 12px; }
+.tobj { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.tobj .ohd { display: flex; gap: 8px; align-items: baseline; }
+.tobj .code { font-family: var(--mono); color: var(--muted); font-size: 0.78rem; flex: none; min-width: 2.2em; }
+.tobj.read .code { color: var(--good); }
+.tobj .ot { flex: 1; min-width: 0; font-size: 0.92rem; }
+.tobj .pct, .topics .sechd .pct { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); flex: none; font-variant-numeric: tabular-nums; }
+.oacts { display: flex; gap: 6px; flex-wrap: wrap; }
+.oacts { gap: 8px; }
+.oacts button { padding: 8px 12px; min-height: 40px; font-size: 0.85rem; border-radius: 8px; touch-action: manipulation; }
+.tobj .kp { font-size: 0.72rem; color: var(--accent); white-space: nowrap; }
+.topics .sec { scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 84px); }
+.oacts button.learn { border-color: var(--accent); color: var(--accent); }
+.bgtoggle { width: 100%; text-align: left; margin-top: 10px; padding: 9px 12px; font-size: 0.9rem; color: var(--muted); }
+.modebtn.wide { grid-column: 1 / -1; }
+/* ---- Custom drill sheet ---- */
+.hscrim { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 25; }
+.hsheet { position: fixed; inset: auto 0 0 0; max-height: 86vh; max-height: 86dvh; overflow-y: auto; overscroll-behavior: contain; z-index: 26; background: var(--panel); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; padding: 14px 16px; padding-bottom: max(14px, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 10px; max-width: 760px; margin: 0 auto; }
+body.sheet-open { overflow: hidden; }
+.cdtree { display: flex; flex-direction: column; gap: 2px; }
+.cdsec { display: flex; align-items: center; gap: 8px; padding: 0; border-top: 1px solid var(--line); }
+.cdsec label { min-height: 44px; touch-action: manipulation; }
+.hsheet button.small, .hsheet .chips button { min-height: 40px; padding: 8px 12px; }
+.cdfoot label { min-height: 40px; display: flex; align-items: center; gap: 8px; touch-action: manipulation; }
+.cdsec input, .cdobj input, .cdfoot input { width: 20px; height: 20px; }
+.cdsec label, .cdobj { display: flex; gap: 8px; align-items: center; cursor: pointer; min-width: 0; }
+.cdsec label { flex: 1; font-weight: 600; font-size: 0.92rem; }
+.cdsec input, .cdobj input { accent-color: var(--accent); flex: none; }
+.cdsec .note { font-size: 0.78rem; white-space: nowrap; }
+.cdobj { padding: 0 0 0 30px; min-height: 40px; font-size: 0.88rem; touch-action: manipulation; }
+.cdobj .code { font-family: var(--mono); color: var(--muted); font-size: 0.78rem; flex: none; min-width: 2.2em; }
+.cdhead { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-top: 8px; }
+.cdfoot { position: sticky; bottom: calc(-1 * max(14px, env(safe-area-inset-bottom, 0px))); background: var(--panel); border-top: 1px solid var(--line); padding: 10px 0 max(14px, env(safe-area-inset-bottom, 0px)); margin-bottom: calc(-1 * max(14px, env(safe-area-inset-bottom, 0px))); display: flex; flex-direction: column; gap: 8px; }
+.cdgo { display: flex; gap: 8px; }
+.cdgo button { flex: 1; }
 /* ---- Today card ---- */
 .today { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
-.trow { display: flex; gap: 6px 8px; flex-wrap: wrap; align-items: center; font-size: 0.88rem; }
+.trow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 0.88rem; }
 .trow .tq { color: var(--muted); }
-.tchip { padding: 4px 10px; font-size: 0.8rem; border-radius: 999px; position: relative; overflow: hidden; }
+.tchip { padding: 8px 12px; min-height: 40px; touch-action: manipulation; display: inline-flex; align-items: center; font-size: 0.82rem; border-radius: 999px; position: relative; overflow: hidden; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; }
 .tchip.on { border-color: var(--accent); color: var(--accent); }
-.tchip input[type=date] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.tchip:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tchip input[type=date] { font-size: 16px;  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
 .tpill { padding: 4px 10px; font-size: 0.85rem; border-radius: 999px; background: transparent; }
 .trun { color: var(--muted); font-size: 0.82rem; }
 .tmore { display: flex; gap: 6px 8px; flex-wrap: wrap; align-items: center; font-size: 0.85rem; padding-top: 2px; }
@@ -241,9 +287,11 @@ code.nm, .nm { color: var(--accent); font-family: var(--mono); font-size: 0.92em
 .tgo .tl { font-size: 1.02rem; } .tgo .ts { font-size: 0.82rem; font-weight: 500; opacity: 0.85; }
 .tgo .tstrip { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: color-mix(in srgb, var(--accent-ink) 22%, transparent); }
 .tgo .tstrip b { display: block; height: 100%; width: 0; background: var(--accent-ink); }
-.tbar { display: flex; gap: 2px; height: 12px; cursor: pointer; }
-.tbar i { display: block; background: var(--panel-2); border-radius: 2px; overflow: hidden; position: relative; min-width: 6px; }
-.tbar i b { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+.tbar { display: flex; gap: 3px; height: 28px; }
+.tbar .tseg { flex: 1; display: block; padding: 0; border: 0; background: var(--panel-2); border-radius: 4px; overflow: hidden; position: relative; cursor: pointer; touch-action: manipulation; }
+.tbar .tseg span { position: relative; font-family: var(--mono); font-size: 0.72rem; color: var(--fg); }
+.tbar .tseg b { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+.tbar .tseg:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .tcore { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin-top: -4px; }
 .tcore b { font-family: var(--mono); font-size: 0.92rem; font-weight: 500; }
 .tline { display: flex; gap: 6px 8px; flex-wrap: wrap; align-items: center; }
@@ -322,9 +370,11 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
       <div class="trow" id="tdate"></div>
       <div class="tmore" id="tmore" hidden></div>
       <button class="primary tgo" id="tgo"><span class="tl" id="tgoLabel">Continue</span><span class="ts" id="tgoSub"></span><i class="tstrip"><b id="tstrip"></b></i></button>
-      <div class="tbar" id="tbar" role="button" tabindex="0" aria-label="Exam sections by weight; open the weakest"></div>
+      <div class="tbar" id="tbar" role="group" aria-label="Exam sections by weight; tap one to open it"></div>
       <div class="tcore"><b id="tcore"></b><span class="note" id="tleft"></span></div>
       <div class="note tline" id="tline" hidden></div>
+      <div class="note tline" id="tdisc" hidden><span>Not finishing that session?</span><button class="ghost small" id="tdiscBtn">Discard it</button></div>
+      <div class="note tline" id="continueRow" hidden><span>Also reading: <span id="continueNote"></span></span><button class="ghost small" id="continueBtn">Open</button></div>
     </div>
 
     <div class="panel" id="resumePanel" hidden>
@@ -336,33 +386,29 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
       </div>
     </div>
 
-    <div class="panel">
-      <div class="eyebrow">Start</div>
-      <div class="grid2" style="margin-top:10px">
-        <button class="modebtn" data-mode="learn" id="learnBtn"><strong>Learn</strong><span id="learnDesc">Read the explainer for an objective, then drill its cards and questions.</span></button>
-        <button class="modebtn" data-mode="exam"><strong>Exam simulation</strong><span id="examDesc">Weighted by blueprint, timed at one minute per question, no feedback until you submit.</span></button>
-        <button class="modebtn" data-mode="quick"><strong>Quick 20</strong><span>Twenty random questions with instant feedback. Good for a coffee break.</span></button>
-        <button class="modebtn" data-mode="weak"><strong>Weak spots</strong><span id="weakDesc">Everything you have missed or never seen, with instant feedback.</span></button>
-        <button class="modebtn" data-mode="drill"><strong>Drill the selection</strong><span id="drillDesc">Every question in the sections and objectives ticked below, instant feedback.</span></button>
-        <button class="modebtn" data-mode="cards" id="cardsBtn"><strong>Flashcards</strong><span id="cardsDesc">Spaced review of the facts behind the questions.</span></button>
-      </div>
-      <div class="confirm" id="continueRow" hidden style="margin-top:12px"><div><strong>Continue reading.</strong> <span class="note" id="continueNote"></span></div><div class="spacer"></div><button class="primary" id="continueBtn">Open</button></div>
-      <div class="actions" style="margin-top:14px">
-        <label class="note"><input type="checkbox" id="optShuffle" checked> Shuffle answer order</label>
-        <label class="note"><input type="checkbox" id="optCram"> Flashcards: cram everything, not just cards due</label>
-        <label class="note"><input type="number" id="optExamN" min="10" max="150" step="5" value="60" style="width:5em;font:inherit;background:var(--panel-2);color:inherit;border:1px solid var(--line);border-radius:6px;padding:2px 6px"> questions in the exam sim</label>
-      </div>
+    <div class="panel topics" id="topics">
+      <div class="actions"><div class="eyebrow">Topics</div><div class="spacer"></div><button class="ghost small" id="allLessons">All lessons</button></div>
+      <p class="note" style="margin-top:6px">The exam sections in weight order. Open one for its objectives; each has its own Learn, Drill and Cards. The percentage is your recall score: a right answer counts 60 percent, full credit comes when it is right again on a later day, and cards count for 40 percent.</p>
+      <div class="bp" id="bp" style="margin-top:10px"></div>
+      <button class="ghost bgtoggle" id="bgToggle" aria-expanded="false"></button>
+      <div class="bp" id="bpx" hidden></div>
     </div>
 
     <div class="panel">
-      <div class="actions"><div class="eyebrow">Exam blueprint</div><div class="spacer"></div>
-        <button class="ghost small" id="selAll">Select all</button><button class="ghost small" id="selExam">Exam sections only</button><button class="ghost small" id="selNone">Select none</button><button class="ghost small" id="expandAll">Expand all</button></div>
-      <p class="note" style="margin-top:6px" id="bpNote"></p>
-      <div class="bp" id="bp" style="margin-top:12px"></div>
-      <div class="eyebrow" style="margin-top:18px">Background topics (not scored sections)</div>
-      <div class="bp" id="bpx" style="margin-top:8px"></div>
+      <div class="eyebrow">More practice</div>
+      <div class="grid2" style="margin-top:10px">
+        <button class="modebtn" data-mode="cards" id="cardsBtn"><strong>Flashcards</strong><span id="cardsDesc">Spaced review of the facts behind the questions.</span></button>
+        <button class="modebtn" data-mode="weak"><strong>Weak spots</strong><span id="weakDesc">Everything you have missed or never seen, with instant feedback.</span></button>
+        <button class="modebtn" data-mode="quick"><strong>Quick 20</strong><span>Twenty random questions with instant feedback.</span></button>
+        <button class="modebtn" data-mode="exam"><strong>Exam simulation</strong><span id="examDesc">Weighted by blueprint, one minute per question, feedback at the end.</span></button>
+        <button class="modebtn wide" data-mode="custom" id="customBtn"><strong>Custom drill</strong><span id="customDesc">Pick several topics, then drill their questions or review their cards.</span></button>
+      </div>
       <div class="actions" style="margin-top:14px">
-        <span class="note">Ticks set what Drill and Flashcards cover. Mastery is the share of questions answered correctly on the most recent try. History and schedules live in this browser only.</span>
+        <label class="note"><input type="checkbox" id="optShuffle" checked> Shuffle answer order</label>
+        <label class="note"><input type="number" id="optExamN" min="10" max="150" step="5" value="60" style="width:5em;font:inherit;font-size:16px;background:var(--panel-2);color:inherit;border:1px solid var(--line);border-radius:6px;padding:2px 6px"> questions in the exam sim</label>
+      </div>
+      <div class="actions" style="margin-top:12px">
+        <span class="note">Progress lives in this browser only.</span>
         <div class="spacer"></div>
         <button class="ghost small" id="resetBtn">Reset history</button>
       </div>
@@ -480,6 +526,18 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   </section>
 </div>
 
+<!-- CUSTOM DRILL: pick several topics; the selection is used only by this sheet's two buttons -->
+<div class="hscrim" id="cdScrim" hidden></div>
+<div class="hsheet" id="cdSheet" hidden role="dialog" aria-modal="true" aria-label="Custom drill">
+  <div class="actions"><strong>Custom drill</strong><div class="spacer"></div><button class="ghost small" id="cdClose">Close</button></div>
+  <div class="chips"><button class="ghost small" id="selAll">All</button><button class="ghost small" id="selExam">Exam sections</button><button class="ghost small" id="selWeak">Weakest 3</button><button class="ghost small" id="selNone">None</button></div>
+  <div class="cdtree" id="cdTree"></div>
+  <div class="cdfoot">
+    <label class="note"><input type="checkbox" id="optCram"> Cards: include ones not due yet</label>
+    <div class="cdgo"><button class="primary" id="cdDrill">Drill</button><button id="cdCards">Review cards</button></div>
+  </div>
+</div>
+
 <!-- DECK: full-screen slide view of a lesson -->
 <div id="deck" hidden>
   <div class="dtop">
@@ -578,11 +636,25 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const shuffleOpts = $('optShuffle').checked;
     const order = {};
     for (const id of ids) { const n = BY_ID[id].options.length; const idx = [...Array(n).keys()]; order[id] = shuffleOpts ? shuffle(idx) : idx; }
-    S = { mode, ids, order, picks: {}, checked: {}, flags: {}, cur: 0, startedAt: Date.now(), limitSec: mode === 'exam' ? ids.length * 60 : 0, done: false, fromLesson: (opts && opts.fromLesson) || null, plan: (opts && opts.plan) || null, snap: snapRoll() };
-    save(SESSION_KEY, S);
+    S = { mode, ids, order, picks: {}, checked: {}, flags: {}, cur: 0, startedAt: Date.now(), limitSec: mode === 'exam' ? ids.length * 60 : 0, done: false, fromLesson: (opts && opts.fromLesson) || null, fromLean: !!(opts && opts.fromLean), fromPlan: (opts && opts.fromPlan) || null, plan: (opts && opts.plan) || null, snap: snapRoll() };
+    persist();
     showView('quiz'); renderQ(); startTimer();
   }
 
+  // answers actually given (a ticked-then-unticked multi-select is not one)
+  function answered(sess) { return Object.values((sess && sess.picks) || {}).filter(p => p && p.length).length; }
+  // a session is saved once it has an answer (a timed sim at once), and a drill never replaces a half-done exam sim;
+  // drill answers are recorded as they are checked, so only the drill's place is lost in that case
+  function persist() {
+    if (!S || S.done) return;
+    const old = load(SESSION_KEY, null), mine = !!(old && old.startedAt === S.startedAt), other = !!(old && !old.done && !mine && answered(old));
+    if (!answered(S)) {   // nothing answered (or the only pick was taken back): a sim is saved at once unless another session has answers
+      if (S.mode === 'exam' && !other) save(SESSION_KEY, S); else if (mine) del(SESSION_KEY);
+      return;
+    }
+    if (S.mode !== 'exam' && other && old.mode === 'exam') return;   // a drill never replaces a half-done sim
+    save(SESSION_KEY, S);
+  }
   function startTimer() {
     stopTimer();
     if (!S || !S.limitSec) { $('timer').hidden = true; return; }
@@ -599,12 +671,14 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
 
   // ---------- views ----------
   function showView(name) {
+    if (name === 'home' && updateTo && applyUpdate()) return;   // a newer build was waiting for Home
     for (const v of ['home', 'quiz', 'results', 'cards', 'learn']) $(v).hidden = v !== name;
     $('homeBtn').hidden = name === 'home';
     $('progress').hidden = name !== 'quiz';
     if (name !== 'quiz') $('timer').hidden = true;
-    $('eyebrow').textContent = name === 'home' ? 'Practice bank' : name === 'cards' ? 'Flashcards' : name === 'learn' ? 'Learn' : name === 'quiz' ? ({ exam: 'Exam simulation', quick: 'Quick 20', weak: 'Weak spots', drill: 'Domain drill', retry: 'Retry missed', lesson: 'Lesson quiz', plan: 'Today' }[S.mode] || 'Quiz') : 'Results';
-    window.scrollTo(0, 0);
+    $('eyebrow').textContent = name === 'home' ? 'Practice bank' : name === 'cards' ? 'Flashcards' : name === 'learn' ? 'Learn' : name === 'quiz' ? ({ exam: 'Exam simulation', quick: 'Quick 20', weak: 'Weak spots', drill: 'Topic drill', retry: 'Retry missed', lesson: 'Lesson quiz', plan: 'Today' }[S.mode] || 'Quiz') : 'Results';
+    window.scrollTo(0, name === 'home' && homeY != null ? homeY : 0);
+    if (name === 'home') homeY = null;
   }
 
   // ---------- learn ----------
@@ -913,10 +987,11 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   // day. fr is the day of the first success since the last miss; a miss or Again deletes it, so the climb restarts
   function cardLastDay(s, BOX_DAYS) { return dayKey((s.due || 0) - (BOX_DAYS[s.box] || 0) * 864e5); }
   function qStrength(s, fr) { if (!s || s.last !== 1 || fr == null) return 0; return dayKey(s.t) > fr ? 1 : 0.6; }
-  function cStrength(s, fr, BOX_DAYS) { if (!s || !s.box || fr == null) return 0; return s.box >= 2 && cardLastDay(s, BOX_DAYS) > fr ? 1 : 0.6; }
+  // lg is the last day the card was rated Good or Easy, so a struggled (Hard) review on a later day earns no full credit
+  function cStrength(s, fr, BOX_DAYS, lg) { if (!s || !s.box || fr == null) return 0; return s.box >= 2 && lg != null && lg > fr ? 1 : 0.6; }
   // st: {stats, cards, fr, BOX_DAYS}; node and section strength mix questions 0.6 and self-rated cards 0.4
   function rollups(core, st) {
-    const sq = id => qStrength(st.stats[id], st.fr[id]), sc = id => cStrength(st.cards[id], st.fr[id], st.BOX_DAYS);
+    const sq = id => qStrength(st.stats[id], st.fr[id]), sc = id => cStrength(st.cards[id], st.fr[id], st.BOX_DAYS, (st.lg || {})[id]);
     const mean = (ids, f) => (ids.length ? ids.reduce((a, id) => a + f(id), 0) / ids.length : 0);
     const mix = (qs, cs) => (cs.length ? 0.6 * mean(qs, sq) + 0.4 * mean(cs, sc) : mean(qs, sq));
     const node = {}, sec = {}; let total = 0;
@@ -926,16 +1001,18 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   }
   // F: days at the end with no new material; 1 for a 7-day runway, 2 for 14, 4 for 28 or more
   function finalDays(runway) { return Math.max(1, Math.min(4, Math.round(0.15 * runway))); }
-  // the review lane for today: missed or stale critical questions, due critical cards (lowest box, most overdue first)
+  // the review lane for today: missed or stale critical questions, due critical cards (lowest box, most overdue first);
+  // anything answered or rated today waits for a later day, so a fresh miss is not re-asked before it is taught
   function reviewLane(core, st, t) {
-    const qs = [...core.q].filter(id => { const s = st.stats[id]; return s && (s.last === 0 || t - dayKey(s.t) > 10); });
-    const cs = [...core.c].filter(id => { const s = st.cards[id]; return s && dayKey(s.due || 0) <= t; })
+    const qs = [...core.q].filter(id => { const s = st.stats[id]; return s && dayKey(s.t) < t && (s.last === 0 || t - dayKey(s.t) > 10); });
+    const cs = [...core.c].filter(id => { const s = st.cards[id]; return s && dayKey(s.due || 0) <= t && cardLastDay(s, st.BOX_DAYS) < t; })
       .sort((a, b) => (st.cards[a].box - st.cards[b].box) || ((st.cards[a].due || 0) - (st.cards[b].due || 0)));
     return { qs, cs };
   }
   // minutes still needed for first coverage: lean slides of uncovered lessons, critical cards and questions never recalled
-  function newMinutes(core, st, leanSlides, covered, objs) {
-    const seenC = new Set(), seenQ = new Set(); let sec = 0;
+  // seen carries items already charged across calls, so a card or question shared by objectives is paid once
+  function newMinutes(core, st, leanSlides, covered, objs, seen) {
+    const seenC = (seen && seen.c) || new Set(), seenQ = (seen && seen.q) || new Set(); let sec = 0;
     for (const o of (objs || core.objs)) {
       if (!covered(o.lessonId)) sec += PLAN_SEC.slide * (leanSlides[o.lessonId] || 0);
       for (const id of o.cIds) if (!seenC.has(id)) { seenC.add(id); if (!(st.fr[id] != null && st.cards[id] && st.cards[id].box)) sec += PLAN_SEC.card; }
@@ -949,9 +1026,9 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   }
   // what the pace buys: walk objectives in path order spending newDays x (cap - review) minutes
   function forecast(core, st, leanSlides, covered, newDays, cap, rev) {
-    let budget = newDays * Math.max(5, cap - rev), reached = 0, wt = 0;
+    let budget = newDays * Math.max(5, cap - rev), reached = 0, wt = 0; const seen = { c: new Set(), q: new Set() };
     for (const s of core.sections) for (const o of s.objs) {
-      const m = newMinutes(core, st, leanSlides, covered, [o]);
+      const m = newMinutes(core, st, leanSlides, covered, [o], seen);
       if (m > budget) return { reached, of: core.objs.length, weight: Math.round(wt) };
       budget -= m; reached++; wt += s.weight / s.objs.length;
     }
@@ -983,14 +1060,14 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   // ---------- exam-date plan: one new key; existing keys and record shapes stay as they are ----------
   const PLAN_KEY = 'splunkquiz.plan.v1';
   const storageOK = (() => { try { localStorage.setItem('splunkquiz.probe', '1'); const ok = localStorage.getItem('splunkquiz.probe') === '1'; localStorage.removeItem('splunkquiz.probe'); return ok; } catch (e) { return false; } })();
-  function planDefaults() { return { v: 1, exam: null, set: null, runway: null, cap: 90, opens: 0, opensDay: null, out: null, attempts: [], fr: {}, cov: {}, shaky: {}, days: {}, sims: [], sd: 0, best: 0, bf: 0 }; }
+  function planDefaults() { return { v: 1, exam: null, set: null, runway: null, cap: 90, opens: 0, opensDay: null, out: null, attempts: [], fr: {}, lg: {}, cov: {}, shaky: {}, days: {}, sims: [], sd: 0, best: 0, bf: 0, bf2: 0 }; }
   function loadPlan() {
     const p = Object.assign(planDefaults(), load(PLAN_KEY, null) || {});
-    for (const k of ['fr', 'cov', 'shaky', 'days']) if (!p[k] || typeof p[k] !== 'object' || Array.isArray(p[k])) p[k] = {};
+    for (const k of ['fr', 'lg', 'cov', 'shaky', 'days']) if (!p[k] || typeof p[k] !== 'object' || Array.isArray(p[k])) p[k] = {};
     for (const k of ['attempts', 'sims']) if (!Array.isArray(p[k])) p[k] = [];
     if (p.exam != null && dateKey(p.exam) == null) p.exam = null;
     const keys = Object.keys(p.days).map(Number).sort((a, b) => a - b); keys.slice(0, Math.max(0, keys.length - 120)).forEach(k => delete p.days[k]);
-    const t = dayKey(Date.now()); for (const k in p.fr) if (p.fr[k] > t) p.fr[k] = t;   // clock moved back
+    const t = dayKey(Date.now()); for (const m of [p.fr, p.lg]) for (const k in m) if (m[k] > t) m[k] = t;   // clock moved back
     return p;
   }
   let plan = loadPlan();
@@ -999,17 +1076,18 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   const CORE_BY_LESSON = Object.fromEntries(CORE.objs.map(o => [o.lessonId, o]));
   function todayKey() { return dayKey(Date.now()); }
   function dayRec(t) { const k = String(t); return plan.days[k] || (plan.days[k] = { r: 0, m: 0 }); }
-  function planState() { return { stats, cards: cardState, fr: plan.fr, BOX_DAYS }; }
+  function planState() { return { stats, cards: cardState, fr: plan.fr, lg: plan.lg, BOX_DAYS }; }
   // one write per answer or rating: today's retrievals and credited minutes; for critical items the first-success day
   function planHit(kind, id, ok, repeat) {
     const t = todayKey(), d = dayRec(t), crit = kind === 'q' ? CORE.q.has(id) : CORE.c.has(id), before = d.r;
     d.r++; d.m = (d.m || 0) + (kind === 'q' ? (repeat ? PLAN_SEC.qRe : PLAN_SEC.q) : (repeat ? PLAN_SEC.cardRe : PLAN_SEC.card)) / 60;
-    if (crit) { if (ok === false) delete plan.fr[id]; else if (ok === true && plan.fr[id] == null) plan.fr[id] = t; }
+    if (crit) { if (ok === false) delete plan.fr[id]; else if (ok === true && plan.fr[id] == null) plan.fr[id] = t; if (kind === 'c' && ok === true) plan.lg[id] = t; }
     if (before < 10 && d.r >= 10) { plan.sd = (plan.sd || 0) + 1; plan.best = Math.max(plan.best || 0, runState(plan.days, t).run); }
     savePlan();
   }
   // existing history counts at once: a right answer or a card out of box 0 starts at 0.6 and becomes 1 on a later day
   function backfill() {
+    if (!plan.bf2) { for (const id of CORE.c) { const s = cardState[id]; if (s && s.box >= 2 && plan.lg[id] == null) plan.lg[id] = cardLastDay(s, BOX_DAYS); } plan.bf2 = 1; savePlan(); }
     if (plan.bf) return;
     for (const id of CORE.q) { const s = stats[id]; if (s && s.last === 1 && plan.fr[id] == null) plan.fr[id] = dayKey(s.t); }
     for (const id of CORE.c) { const s = cardState[id]; if (s && s.box >= 1 && plan.fr[id] == null) plan.fr[id] = cardLastDay(s, BOX_DAYS); }
@@ -1048,7 +1126,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const isLean = lean != null ? !!lean : !!(same && D.lean);
     const c = compileFor(l, warm, isLean);
     const prev = same ? D : null;   // revealed, fooled and flipped are keyed by slide pid, which survives a recompile
-    D = { id, slides: c.slides, chapters: c.chapters, i: 0, max: 0, warm, lean: isLean, plan: prev ? prev.plan : null, revealed: prev ? prev.revealed : {}, fooled: prev ? prev.fooled : {}, flipped: prev ? prev.flipped : {} };
+    D = { id, slides: c.slides, chapters: c.chapters, i: 0, max: 0, warm, lean: isLean, plan: prev ? prev.plan : null, hold: prev ? prev.hold : {}, gopen: prev ? prev.gopen : {}, revealed: prev ? prev.revealed : {}, fooled: prev ? prev.fooled : {}, flipped: prev ? prev.flipped : {} };
     return D;
   }
   function relocate(old, slides) {
@@ -1081,11 +1159,14 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     renderDeck(at);
     if (at > 0 && !o.at) toast('Resumed at slide ' + (at + 1) + ' of ' + D.slides.length);
   }
-  function closeDeck(toIndex) {
+  function closeDeck(toIndex, keepHistory) {
     hideSheet(); $('deck').hidden = true; document.body.classList.remove('deck-open');
     if (toIndex) showLessonIndex();
-    try { if (history.state && history.state.deck) history.back(); } catch (e) {}   // popstate then finds the deck already hidden and does nothing
+    if (!keepHistory) try { if (history.state && history.state.deck) history.back(); } catch (e) {}   // popstate then finds the deck already hidden and does nothing
   }
+  // hand a deck over to the plan's next step; when that step is another deck the history entry stays, so the
+  // asynchronous popstate from history.back() cannot close the deck that just opened
+  function deckToPlan() { const nx = nextStep(); closeDeck(false, nx.k === 'lesson' || nx.k === 'read'); runStep(nx); }
   window.addEventListener('popstate', () => { if (!$('deck').hidden) { closeDeck(false); showLessonIndex(); } });
   function savePos() {
     if (!D) return;
@@ -1132,7 +1213,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (s.k === 'title') {
       const q = (l.questionIds || []).filter(x => BY_ID[x]).length, c = (l.cardIds || []).filter(x => CARD_BY_ID[x]).length, words = l.sections.reduce((a, sec) => a + sec.blocks.reduce((b, x) => b + wc(x.text), 0), 0);
       h = '<div class="drun">' + esc(l.domain) + (d.weight ? ' · ' + d.weight + '% of exam' : ' · background') + '</div><h2>' + esc(l.title) + '</h2>' + (l.code !== 'X' ? '<p class="note">Objective ' + esc(l.code) + ': ' + esc(l.objective) + '</p>' : '') +
-        '<p class="dstats">' + D.slides.length + ' slides · about ' + Math.max(3, Math.round(words / 220)) + ' min · ' + q + ' questions · ' + c + ' cards</p>' + (lessonRead[l.id] ? '<p class="note">You have read this lesson.</p>' : '');
+        '<p class="dstats">' + D.slides.length + ' slides · about ' + (D.lean ? Math.max(1, Math.round(D.slides.length * PLAN_SEC.slide / 60)) : Math.max(3, Math.round(words / 220))) + ' min · ' + q + ' questions · ' + c + ' cards</p>' + (lessonRead[l.id] ? '<p class="note">You have read this lesson.</p>' : '');
     } else if (s.k === 'intro') h = '<div class="dkick">What this covers</div>' + T(s.text, true);
     else if (s.k === 'focus') h = '<div class="dkick">How the exam tests this</div><div class="dcallout">' + T(s.text, false) + '</div>' + cont();
     else if (s.k === 'warm') {
@@ -1169,7 +1250,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
         (D.plan ? '<button class="primary" data-act="plannext">Next in today\'s plan</button>' : '') +
         (shaky.length ? '<div class="dkick" style="margin-top:4px">Slides you flagged shaky</div>' + shaky.map(([x, k]) => '<button class="ghost" data-act="jump" data-i="' + k + '">' + esc((chapterOf(k) || {}).label || 'Slide') + ', slide ' + (k + 1) + '</button>').join('') : '') +
         (cIds.length ? '<button class="' + (D.plan ? '' : 'primary') + '" data-act="cards">Drill these ' + cIds.length + ' cards</button>' : '') + (qIds.length ? '<button data-act="quiz">Quiz these ' + qIds.length + ' questions</button>' : '') +
-        (nx ? '<button data-act="next">Next lesson: ' + esc(nx.title) + '</button>' : '') + '<button class="ghost" data-act="page">Read as one page</button><button class="ghost" data-act="index">All lessons</button></div>' +
+        (nx && !D.plan ? '<button data-act="next">Next lesson: ' + esc(nx.title) + '</button>' : '') + '<button class="ghost" data-act="page">Read as one page</button><button class="ghost" data-act="index">All lessons</button></div>' +
         (fooled.length ? '<div class="dkick" style="margin-top:8px">Traps you would have fallen for</div><div class="traps">' + fooled.map(t => { const m = /^\s*Trap:\s*([\s\S]*?)\s*Truth:\s*([\s\S]*)$/.exec(t.text); return '<div class="trap">' + (m ? '<span class="tr">Trap</span> ' + citeAll(l, inline(m[1])) + '<br><span class="tt">Truth</span> ' + citeAll(l, inline(m[2])) : citeAll(l, inline(t.text))) + '</div>'; }).join('') + '</div>' : '');
     }
     return '<div class="dwrap">' + h + '</div>';
@@ -1193,9 +1274,10 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const warmHidden = s.k === 'warm' && !D.flipped[s.pid];
     const stepsLeft = s.k === 'list' && s.steps && (D.revealed[s.pid] == null ? 1 : D.revealed[s.pid]) < s.items.length;
     $('dnext').textContent = trapHidden ? 'Reveal the truth' : warmHidden ? 'Show the answer' : stepsLeft ? 'Next step' : s.k === 'finish' ? (ORDERED[ORDERED.findIndex(x => x.id === D.id) + 1] ? 'Next lesson' : 'All lessons') : s.k === 'title' ? 'Start' : 'Next';
-    if (s.k === 'finish') { if (!D.lean) markRead(D.id, true); else if (!plan.cov[D.id]) { plan.cov[D.id] = todayKey(); if (D.plan) planDone('read', []); savePlan(); } }
-    const sh = $('dshaky'), shOff = s.k === 'title' || s.k === 'finish'; sh.classList.toggle('off', shOff); sh.disabled = shOff; sh.setAttribute('aria-pressed', (plan.shaky[D.id] || {})[s.pid] ? 'true' : 'false');
-    if (s.k === 'finish' && D.plan) { const nx = nextStep(); $('dnext').textContent = nx.k === 'done' ? 'Done for today' : 'Next: ' + nx.label; }
+    if (s.k === 'finish') { if (!D.lean) markRead(D.id, true); else if (!plan.cov[D.id]) { plan.cov[D.id] = todayKey(); savePlan(); } if (D.plan) planDone('read', [], D.id); }
+    // Shaky applies to content slides of exam objectives only (the plan acts on nothing else)
+    const sh = $('dshaky'), shOff = s.k === 'title' || s.k === 'finish' || !CORE_BY_LESSON[D.id]; sh.classList.toggle('off', shOff); sh.disabled = shOff; sh.setAttribute('aria-pressed', (plan.shaky[D.id] || {})[s.pid] ? 'true' : 'false');
+    if (s.k === 'finish' && D.plan) { const nx = nextStep(); $('dnext').textContent = nx.k === 'done' ? 'Done for today' : nx.k === 'bonus' ? 'Bonus: weak questions' : 'Next: ' + nx.label; }
     savePos();
   }
   function deckNext() {
@@ -1204,7 +1286,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (s.k === 'trap' && deckStore.prefs.reveal && !D.revealed[s.pid] && /Truth:/.test(s.text)) { D.revealed[s.pid] = 1; renderDeck(D.i); return; }
     if (s.k === 'warm' && !D.flipped[s.pid]) { D.flipped[s.pid] = 1; renderDeck(D.i); return; }
     if (s.k === 'list' && s.steps) { const shown = D.revealed[s.pid] == null ? 1 : D.revealed[s.pid]; if (shown < s.items.length) { D.revealed[s.pid] = shown + 1; renderDeck(D.i); return; } }
-    if (s.k === 'finish' && D.plan) { closeDeck(false); runStep(nextStep()); return; }
+    if (s.k === 'finish' && D.plan) { deckToPlan(); return; }
     if (s.k === 'finish') { const nx = ORDERED[ORDERED.findIndex(x => x.id === D.id) + 1]; if (nx) { delete deckStore.pos[D.id]; openDeck(nx.id, { at: 'start' }); } else { closeDeck(true); } return; }
     if (D.i < D.slides.length - 1) renderDeck(D.i + 1);
   }
@@ -1252,14 +1334,18 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (!Object.keys(m).length) delete plan.shaky[D.id];
     savePlan(); $('dshaky').setAttribute('aria-pressed', m[pid] ? 'true' : 'false');
   });
-  $('dfull').addEventListener('click', () => { if (!D) return; hideSheet(); const id = D.id; buildDeck(id, false, false, false); const k = D.slides.findIndex(x => x.sec != null); renderDeck(k > 0 ? k : 0); });
+  $('dfull').addEventListener('click', () => {
+    if (!D) return; hideSheet(); const id = D.id, pl = D.plan, curPid = D.slides[D.i].pid;
+    const fp = deckStore.pos[id];
+    if (fp && fp.pid && fp.pid !== 'finish' && fp.t && dayKey(fp.t) >= todayKey() - 2) { openDeck(id, { plan: pl }); return; }   // a recent full read resumes there
+    buildDeck(id, false, false, false); D.plan = pl; const m = D.slides.findIndex(x => x.pid === curPid && x.k !== 'title' && x.k !== 'finish'); if (m > 0) { renderDeck(m); return; } const k = D.slides.findIndex(x => x.sec != null); renderDeck(k > 0 ? k : 0); });
   $('dpage').addEventListener('click', () => { deckStore.prefs.view = 'page'; saveDeck(); const id = D.id; closeDeck(false); renderLessonPage(id); });
   $('drestart').addEventListener('click', () => { hideSheet(); D.revealed = {}; D.fooled = {}; D.flipped = {}; D.max = 0; renderDeck(0); });
   $('dtoastBtn').addEventListener('click', () => { $('dtoast').hidden = true; D.revealed = {}; D.fooled = {}; D.flipped = {}; D.max = 0; renderDeck(0); });
   $('dslide').addEventListener('click', e => {
     const mk = e.target.closest('mark.tok.hid'); if (mk) { mk.textContent = mk.dataset.tok; mk.classList.remove('hid'); return; }
     const li = e.target.closest('li[data-fact]'); if (li && !e.target.closest('a')) { li.classList.toggle('open'); return; }
-    const gf = e.target.closest('button.gfull'); if (gf) { D.gopen = D.gopen || {}; D.gopen[gf.dataset.g] = !D.gopen[gf.dataset.g]; renderDeck(D.i); return; }
+    const gf = e.target.closest('button.gfull'); if (gf) { D.gopen = D.gopen || {}; D.gopen[gf.dataset.g] = !D.gopen[gf.dataset.g]; const y = $('dslide').scrollTop; renderDeck(D.i); $('dslide').scrollTop = y; return; }
     const sl = e.target.closest('.sl');
     if (sl && $('dslide').contains(sl) && !e.target.closest('a') && !(window.getSelection && String(window.getSelection()).length)) {
       const pid = D.slides[D.i].pid, n = Number(sl.dataset.ln), on = D.hold[pid] === n;
@@ -1270,10 +1356,10 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     }
     const act = e.target.closest('button[data-act]'); if (!act) return;
     const l = LESSON_BY_ID[D.id], a = act.dataset.act;
-    if (a === 'cards') { const ids = (l.cardIds || []).filter(x => CARD_BY_ID[x]); closeDeck(false); startCards(ids, { fromLesson: D.id }); }
-    else if (a === 'quiz') { const ids = (l.questionIds || []).filter(x => BY_ID[x]); closeDeck(false); start('lesson', shuffle(ids), { fromLesson: D.id }); }
+    if (a === 'cards') { const ids = (l.cardIds || []).filter(x => CARD_BY_ID[x]), back = { fromLesson: D.id, fromLean: D.lean, fromPlan: D.plan }; closeDeck(false); startCards(ids, back); }
+    else if (a === 'quiz') { const ids = (l.questionIds || []).filter(x => BY_ID[x]), back = { fromLesson: D.id, fromLean: D.lean, fromPlan: D.plan }; closeDeck(false); start('lesson', shuffle(ids), back); }
     else if (a === 'next') deckNext();
-    else if (a === 'plannext') { closeDeck(false); runStep(nextStep()); }
+    else if (a === 'plannext') deckToPlan();
     else if (a === 'jump') renderDeck(Number(act.dataset.i));
     else if (a === 'page') $('dpage').click();
     else if (a === 'index') closeDeck(true);
@@ -1334,43 +1420,92 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   function selectedCards() { const set = new Set(); for (const o of allObjs()) if (!pickOff.has(o.id)) o.cIds.forEach(x => set.add(x)); return [...set]; }
   function savePick() { save(PICK_KEY, { off: [...pickOff] }); }
   function mastery(ids) { const right = ids.filter(id => stats[id] && stats[id].last === 1).length; return pct(right, ids.length); }
+  // Topics on Home: no ticks; every section and objective carries its own Learn, Drill and Cards. Exam sections run in path
+  // order (weight, then section number); strength is the tracker's two-day recall for exam objectives, last-answer
+  // mastery for background ones
+  let showBg = false;
+  function examSections() { return CORE.sections.map(c => SECTIONS.find(s => s.name === c.name)).filter(Boolean); }
   function renderBlueprint() {
-    const exam = SECTIONS.filter(s => s.weight > 0), back = SECTIONS.filter(s => s.weight === 0);
-    $('bpNote').textContent = 'The Consultant exam is ' + exam.length + ' weighted sections with ' + exam.reduce((n, s) => n + s.objs.filter(o => o.lessonId).length, 0) + ' numbered objectives. Tick what Drill and Flashcards should cover; expand a section to pick single objectives or open their lessons. ' + Q.length + ' questions, ' + CARDS.length + ' cards, ' + ORDERED.length + ' lessons.';
-    const draw = (box, secs) => {
+    const R = rollups(CORE, planState()), exam = examSections(), back = SECTIONS.filter(s => s.weight === 0);
+    const draw = (box, secs, isExam) => {
       box.innerHTML = '';
       for (const s of secs) {
-        const on = s.objs.filter(o => !pickOff.has(o.id)).length, p = mastery(s.allQ), seen = s.allQ.filter(id => stats[id]).length;
-        const lessons = s.objs.filter(o => o.lessonId), read = lessons.filter(o => lessonRead[o.lessonId]).length;
-        const el = document.createElement('div'); el.className = 'sec' + (openSecs.has(s.name) ? ' open' : ''); el.dataset.sec = s.name;
-        el.innerHTML = '<div class="sechead"><label><input type="checkbox" class="secpick"> <span>' + (s.num ? s.num + ' ' : '') + esc(s.name) + '</span></label>' +
-          '<small>' + (s.weight ? s.weight + '% of exam · ' : '') + s.allQ.length + ' q · ' + s.allC.length + ' cards · ' + seen + ' seen' + (lessons.length ? ' · ' + read + ' of ' + lessons.length + ' lessons read' : '') + '</small>' +
-          '<span class="pct">' + p + '%</span><button class="ghost small toggle">' + (openSecs.has(s.name) ? 'Hide' : 'Objectives') + '</button></div>' +
-          '<div class="bar"><i style="width:' + p + '%"></i></div><div class="objs"></div>';
-        const cb = el.querySelector('.secpick'); cb.checked = on === s.objs.length; cb.indeterminate = on > 0 && on < s.objs.length;
-        cb.addEventListener('change', () => { for (const o of s.objs) { if (cb.checked) pickOff.delete(o.id); else pickOff.add(o.id); } savePick(); renderBlueprint(); });
-        el.querySelector('.toggle').addEventListener('click', () => { if (openSecs.has(s.name)) openSecs.delete(s.name); else openSecs.add(s.name); renderBlueprint(); });
-        const ob = el.querySelector('.objs');
-        for (const o of s.objs) {
-          const row = document.createElement('div'); row.className = 'obj' + (o.lessonId && lessonRead[o.lessonId] ? ' read' : '');
-          row.innerHTML = '<label><input type="checkbox"' + (pickOff.has(o.id) ? '' : ' checked') + '><span class="code">' + esc(o.code) + '</span><span>' + esc(o.title) + '</span></label>' +
-            '<small>' + o.qIds.length + ' q · ' + o.cIds.length + ' cards</small><span class="pct">' + (o.qIds.length ? mastery(o.qIds) + '%' : '') + '</span>' +
-            (o.lessonId ? '<button class="ghost learn" title="' + (lessonRead[o.lessonId] ? 'Lesson read. Open it again' : 'Open the lesson') + '">' + (lessonRead[o.lessonId] ? 'Read' : 'Learn') + '</button>' : '');
-          row.querySelector('input').addEventListener('change', e => { if (e.target.checked) pickOff.delete(o.id); else pickOff.add(o.id); savePick(); renderBlueprint(); });
-          const lb = row.querySelector('.learn'); if (lb) lb.addEventListener('click', () => openLesson(o.lessonId));
-          ob.appendChild(row);
+        const open = openSecs.has(s.name), lessons = s.objs.filter(o => o.lessonId), read = lessons.filter(o => lessonRead[o.lessonId]).length;
+        const sv = isExam ? Math.round(100 * (R.sec[s.name] || 0)) : mastery(s.allQ);
+        const el = document.createElement('div'); el.className = 'sec' + (open ? ' open' : ''); el.dataset.sec = s.name;
+        let h = '<button class="sechd" data-a="toggle" aria-expanded="' + open + '"><span class="snum">' + esc(s.num || '') + '</span><span class="sname">' + esc(s.name) + '</span><span class="pct">' + sv + '%' + (isExam ? '' : ' last try') + '</span><span class="chev" aria-hidden="true"></span></button>' +
+          '<div class="bar"><i style="width:' + sv + '%"></i></div><div class="note smeta">' + (s.weight ? s.weight + '% of the exam · ' : '') + (lessons.length ? read + ' of ' + lessons.length + ' read' : s.allQ.length + ' questions') + '</div>';
+        if (open) {
+          h += '<div class="tobjs">';
+          for (const o of s.objs) {
+            const core = CORE_BY_LESSON[o.lessonId], ov = core ? Math.round(100 * (R.node[core.code] || 0)) : (o.qIds.length ? mastery(o.qIds) : null), isRead = !!(o.lessonId && lessonRead[o.lessonId]), keyPts = !isRead && !!(o.lessonId && plan.cov[o.lessonId]);
+            h += '<div class="tobj' + (isRead ? ' read' : '') + '"><div class="ohd"><span class="code">' + esc(o.code) + '</span><span class="ot">' + esc(o.title) + (keyPts ? ' <span class="kp">covered</span>' : '') + '</span>' + (ov != null ? '<span class="pct">' + ov + '%' + (core ? '' : ' last try') + '</span>' : '') + '</div><div class="oacts">' +
+              (o.lessonId ? '<button class="learn" data-a="learn" data-o="' + esc(o.id) + '">' + (isRead ? 'Learn again' : 'Learn') + '</button>' : '') +
+              (o.qIds.length ? '<button data-a="drill" data-o="' + esc(o.id) + '">Drill ' + o.qIds.length + '</button>' : '') +
+              (o.cIds.length ? '<button data-a="cards" data-o="' + esc(o.id) + '">Cards ' + o.cIds.length + '</button>' : '') + '</div></div>';
+          }
+          h += '<div class="oacts">' + (s.allQ.length ? '<button data-a="sdrill">Drill the section, ' + s.allQ.length + '</button>' : '') + (s.allC.length ? '<button data-a="scards">Section cards, ' + s.allC.length + '</button>' : '') + '</div></div>';
         }
-        box.appendChild(el);
+        el.innerHTML = h; box.appendChild(el);
       }
     };
-    draw($('bp'), exam); draw($('bpx'), back);
-    const nq = selectedQ().length, nc = selectedCards().length;
-    $('drillDesc').textContent = nq ? nq + ' questions in the ticked sections and objectives, instant feedback.' : 'Nothing ticked below. Select a section or objective first.';
-    $('expandAll').textContent = openSecs.size === SECTIONS.length ? 'Collapse all' : 'Expand all';
-    const due = dueCardIds(selectedCards()).length;
-    if (CARDS.length) $('cardsDesc').textContent = due + ' of ' + nc + ' selected cards due now (' + CARDS.length + ' in the deck). Flip, rate yourself, and the deck schedules the rest.';
+    draw($('bp'), exam, true); draw($('bpx'), back, false);
+    $('bpx').hidden = !showBg; $('bgToggle').textContent = (showBg ? 'Hide ' : 'Show ') + back.length + ' background topics (not scored sections)'; $('bgToggle').setAttribute('aria-expanded', String(showBg));
   }
-  $('expandAll').addEventListener('click', () => { if (openSecs.size === SECTIONS.length) openSecs.clear(); else SECTIONS.forEach(s => openSecs.add(s.name)); renderBlueprint(); });
+  let homeY = null;   // where Home was when a topic's button left it
+  function topicClick(e) {
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    if (b.dataset.a !== 'toggle') homeY = window.scrollY;
+    const secEl = b.closest('.sec'), sec = secEl && SECTIONS.find(x => x.name === secEl.dataset.sec); if (!sec) return;
+    const o = b.dataset.o ? sec.objs.find(x => x.id === b.dataset.o) : null, a = b.dataset.a;
+    if (a === 'toggle') { if (openSecs.has(sec.name)) openSecs.delete(sec.name); else openSecs.add(sec.name); renderBlueprint(); }
+    else if (a === 'learn' && o) openLesson(o.lessonId);
+    else if (a === 'drill' && o) start('drill', shuffle(o.qIds));
+    else if (a === 'cards' && o) startCards(o.cIds);
+    else if (a === 'sdrill') start('drill', shuffle(sec.allQ));
+    else if (a === 'scards') startCards(sec.allC);
+  }
+  $('bp').addEventListener('click', topicClick); $('bpx').addEventListener('click', topicClick);
+  $('bgToggle').addEventListener('click', () => { showBg = !showBg; renderBlueprint(); });
+  $('allLessons').addEventListener('click', () => showLessonIndex());
+
+  // Custom drill sheet: the tick selection (splunkquiz.pick.v1) lives here and nowhere else
+  const sheetOpen = new Set();
+  function renderSheet() {
+    const box = $('cdTree'), f = document.activeElement, fk = f && box.contains(f) ? ['sec', 'obj', 'open'].map(k => f.dataset[k] != null ? '[data-' + k + '="' + CSS.escape(f.dataset[k]) + '"]' : '').join('') : '';
+    const line = s => { const on = s.objs.filter(o => !pickOff.has(o.id)).length, all = on === s.objs.length, some = on > 0 && !all;
+      let h = '<div class="cdsec"><label><input type="checkbox" data-sec="' + esc(s.name) + '"' + (all ? ' checked' : '') + (some ? ' data-mixed="1"' : '') + '><span>' + esc((s.num ? s.num + ' ' : '') + s.name) + '</span></label><span class="note">' + s.allQ.length + ' q</span>' + (s.objs.length > 1 ? '<button class="ghost small" data-open="' + esc(s.name) + '">' + (sheetOpen.has(s.name) ? 'Hide' : 'Objectives') + '</button>' : '') + '</div>';
+      if (sheetOpen.has(s.name)) for (const o of s.objs) h += '<label class="cdobj"><input type="checkbox" data-obj="' + esc(o.id) + '"' + (pickOff.has(o.id) ? '' : ' checked') + '><span class="code">' + esc(o.code) + '</span><span>' + esc(o.title) + '</span></label>';
+      return h; };
+    box.innerHTML = '<div class="cdhead">Exam sections</div>' + examSections().map(line).join('') + '<div class="cdhead">Background topics</div>' + SECTIONS.filter(s => s.weight === 0).map(line).join('');
+    box.querySelectorAll('input[data-mixed]').forEach(x => { x.indeterminate = true; });
+    if (fk) { const back = box.querySelector(fk); if (back) back.focus(); }
+    const nq = selectedQ().length, cards = selectedCards(), nc = $('optCram').checked ? cards.length : dueCardIds(cards).length;
+    $('cdDrill').textContent = 'Drill ' + nq + ' question' + (nq === 1 ? '' : 's'); $('cdDrill').disabled = !nq;
+    $('cdCards').textContent = 'Review ' + nc + ' card' + (nc === 1 ? '' : 's'); $('cdCards').disabled = !nc;
+  }
+  let sheetOpener = null;
+  function openSheet(cram) {
+    sheetOpener = document.activeElement; if (cram != null) $('optCram').checked = !!cram;
+    renderSheet(); $('cdSheet').hidden = false; $('cdScrim').hidden = false; document.body.classList.add('sheet-open');
+    document.querySelector('.wrap').setAttribute('inert', ''); $('cdClose').focus();
+  }
+  function closeSheet() {
+    $('cdSheet').hidden = true; $('cdScrim').hidden = true; document.body.classList.remove('sheet-open'); document.querySelector('.wrap').removeAttribute('inert');
+    if (sheetOpener && sheetOpener.focus) try { sheetOpener.focus(); } catch (e) {}
+  }
+  $('cdClose').addEventListener('click', closeSheet); $('cdScrim').addEventListener('click', closeSheet);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('cdSheet').hidden) closeSheet(); });
+  $('cdTree').addEventListener('click', e => { const b = e.target.closest('button[data-open]'); if (!b) return; const n = b.dataset.open; if (sheetOpen.has(n)) sheetOpen.delete(n); else sheetOpen.add(n); renderSheet(); });
+  $('cdTree').addEventListener('change', e => {
+    const t = e.target;
+    if (t.dataset.sec) { const sec = SECTIONS.find(x => x.name === t.dataset.sec); for (const o of sec.objs) { if (t.checked) pickOff.delete(o.id); else pickOff.add(o.id); } }
+    else if (t.dataset.obj) { if (t.checked) pickOff.delete(t.dataset.obj); else pickOff.add(t.dataset.obj); }
+    savePick(); renderSheet();
+  });
+  $('optCram').addEventListener('change', renderSheet);
+  $('cdDrill').addEventListener('click', () => { const ids = shuffle(selectedQ()); if (!ids.length) return; closeSheet(); start('drill', ids); });
+  $('cdCards').addEventListener('click', () => { const all = selectedCards(), ids = $('optCram').checked ? all : dueCardIds(all); if (!ids.length) return; closeSheet(); startCards(ids); });
   function showLessonIndex() { LV = null; renderLessonIndex(); $('lessonView').hidden = true; $('lessonIndex').hidden = false; showView('learn'); }
   function stepLesson(delta) { const i = ORDERED.findIndex(x => x.id === LV); const n = ORDERED[i + delta]; if (n) openLesson(n.id); }
   $('lindex').addEventListener('click', showLessonIndex);
@@ -1408,10 +1543,18 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     return { t, ex, dl, after: dl != null && dl < 0 && !plan.out, virtual, runway, daysLeft: virtual ? 28 : dl, F: finalDays(runway) };
   }
   // the goal is pinned at the first open of the day, so it never shrinks while you work
-  function todayGoal(P, st, lane) {
+  // the final days are review only, unless under half the critical items are covered with more than a day left
+  function shakyOf(lid) { return !!(plan.shaky[lid] && Object.keys(plan.shaky[lid]).length); }
+  function inFinal(P, R) {
+    if (P.virtual || P.dl > P.F) return false;
+    if (P.dl <= 1) return true;
+    const n = CORE.q.size + CORE.c.size, got = [...CORE.q].filter(id => R.sq(id) > 0).length + [...CORE.c].filter(id => R.sc(id) > 0).length;
+    return got / n >= 0.5;
+  }
+  function todayGoal(P, st, lane, R) {
     const d = dayRec(P.t);
     if (d.g == null) {
-      const finalStretch = !P.virtual && P.dl <= P.F, gm = goalMinutes(finalStretch ? 0 : newMinutes(CORE, st, leanCounts(), covered), lane, Math.max(1, P.daysLeft - P.F), plan.cap);
+      const finalStretch = inFinal(P, R), gm = goalMinutes(finalStretch ? 0 : newMinutes(CORE, st, leanCounts(), covered), lane, Math.max(1, P.daysLeft - P.F), plan.cap);
       d.g = !P.virtual && P.dl === 0 ? 5 : !P.virtual && P.dl === 1 ? Math.min(30, Math.max(10, Math.round(gm.rev))) : gm.goal;
       savePlan();
     }
@@ -1420,15 +1563,22 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   // next objective: flagged-shaky ones first, then path order (exam weight), skipping solid or fully covered ones
   function pinNode(P, R) {
     const d = dayRec(P.t), done = new Set(d.nodes || []);
-    const shaky = o => !!(plan.shaky[o.lessonId] && Object.keys(plan.shaky[o.lessonId]).length);
+    const shaky = o => shakyOf(o.lessonId);
     const open = o => !done.has(o.code) && (shaky(o) || (R.node[o.code] < 0.8 && !(covered(o.lessonId) && o.qIds.every(id => R.sq(id) > 0) && o.cIds.every(id => R.sc(id) > 0))));
     const o = CORE.objs.find(x => shaky(x) && open(x)) || CORE.objs.find(open);
     if (!o) return null;
-    const asked = o.qIds.slice().sort((a, b) => (stats[a] ? 1 : 0) - (stats[b] ? 1 : 0) || R.sq(a) - R.sq(b)).slice(0, 5);
-    d.tgt = { node: o.code, lid: o.lessonId, step: 'check', asked }; savePlan();
+    // objectives share questions, so anything answered today (in another objective's step) is not asked again; when
+    // nothing is left to ask, today's answers decide whether the key points are needed
+    const todayQ = id => stats[id] && dayKey(stats[id].t) === P.t;
+    const askable = o.qIds.filter(id => !todayQ(id)), need = Math.min(3, o.qIds.length);
+    const asked = askable.length >= need ? askable.sort((a, b) => (stats[a] ? 1 : 0) - (stats[b] ? 1 : 0) || R.sq(a) - R.sq(b)).slice(0, 5) : [];
+    let step = 'check';
+    if (!asked.length) { const miss = o.qIds.some(id => stats[id] && stats[id].last === 0); step = miss && (!covered(o.lessonId) || shaky(o)) ? 'read' : 'cards'; }
+    d.tgt = { node: o.code, lid: o.lessonId, step, asked }; savePlan();
     return d.tgt;
   }
-  function bonusStep() {
+  function bonusStep(P) {
+    if (P && !P.virtual && P.dl <= 1) return P.dl === 0 ? { k: 'done', label: 'Exam day', sub: 'Nothing left to review. Good luck.' } : { k: 'done', label: 'Done for tonight', sub: 'Nothing new tonight. Sleep well.' };
     const ids = [...CORE.q].filter(id => stats[id] && stats[id].last === 0);
     const pool = ids.length ? ids : weakIds();
     return pool.length ? { k: 'bonus', tag: 'bonus', ids: shuffle(pool).slice(0, 10), label: 'Today done', sub: 'Bonus: ' + Math.min(10, pool.length) + ' weak questions' } : { k: 'done', label: 'Today done', sub: 'Come back tomorrow' };
@@ -1436,49 +1586,60 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   function nextStep() {
     const P = planDates(), t = P.t, d = dayRec(t), st = planState(), R = rollups(CORE, st), mins = n => Math.max(1, Math.round(n));
     const saved = load(SESSION_KEY, null);
-    if (saved && !saved.done && saved.mode !== 'exam' && dayKey(saved.startedAt) === t) return { k: 'resume', label: 'Resume', sub: (MODE_NAME[saved.mode] || 'Quiz') + ', ' + Object.keys(saved.picks || {}).length + ' of ' + saved.ids.length + ' answered' };
+    if (saved && !saved.done && saved.mode !== 'exam' && dayKey(saved.startedAt) === t && answered(saved)) return { k: 'resume', label: 'Resume', sub: (MODE_NAME[saved.mode] || 'Quiz') + ', ' + answered(saved) + ' of ' + saved.ids.length + ' answered' };
     const mid = Object.entries(deckStore.pos).map(([key, p]) => ({ id: key.replace(/~lean$/, ''), lean: /~lean$/.test(key), p }))
       .filter(x => CORE_BY_LESSON[x.id] && !lessonRead[x.id] && !(x.lean && plan.cov[x.id]) && x.p.i > 0 && x.p.i < x.p.n - 1 && x.p.t && dayKey(x.p.t) >= t - 2).sort((a, b) => b.p.t - a.p.t)[0];
     if (mid) { const pn = posNow(mid.id, mid.lean); return { k: 'lesson', id: mid.id, lean: mid.lean, label: 'Finish reading', sub: CORE_BY_LESSON[mid.id].code + ', slide ' + (pn.i + 1) + ' of ' + pn.n }; }
-    const seen = new Set(d.seen || []), lane = reviewLane(CORE, st, t);
-    lane.qs = lane.qs.filter(id => !seen.has(id)); lane.cs = lane.cs.filter(id => !seen.has(id));
-    const g = todayGoal(P, st, lane);
+    const seen = new Set(d.seen || []), lane = reviewLane(CORE, st, t), answeredToday = id => stats[id] && dayKey(stats[id].t) === t;
+    // questions of objectives flagged shaky go to the front of the lane, the final pass and the last look
+    const shakyQ = CORE.objs.filter(o => shakyOf(o.lessonId)).flatMap(o => o.qIds), isShaky = new Set(shakyQ);
+    const shakyC = CORE.objs.filter(o => shakyOf(o.lessonId)).flatMap(o => o.cIds).filter(id => !(cardState[id] && cardLastDay(cardState[id], BOX_DAYS) === t)).slice(0, 10);
+    lane.qs = [...new Set(shakyQ.filter(id => !answeredToday(id)).slice(0, 8).concat(lane.qs))].filter(id => !seen.has(id)); lane.cs = [...new Set(shakyC.concat(lane.cs))].filter(id => !seen.has(id));
+    const g = todayGoal(P, st, lane, R);
     if (!P.virtual && P.dl === 0) {
-      const ids = [...CORE.q].filter(id => stats[id] && !seen.has(id)).sort((a, b) => R.sq(a) - R.sq(b)).slice(0, 10);
+      if ((d.m || 0) >= g) return bonusStep(P);
+      const ids = [...CORE.q].filter(id => stats[id] && !seen.has(id)).sort((a, b) => (isShaky.has(a) ? 0 : 1) - (isShaky.has(b) ? 0 : 1) || R.sq(a) - R.sq(b)).slice(0, 10);
       return ids.length ? { k: 'quiz', tag: 'last', ids, label: 'Last look', sub: ids.length + ' shakiest questions, 5 min' } : { k: 'done', label: 'Exam day', sub: 'Nothing left to review. Good luck.' };
     }
-    if ((d.m || 0) >= g) return bonusStep();
-    const laneStep = () => lane.qs.length ? { k: 'quiz', tag: 'lane', ids: lane.qs.slice(0, 10), label: 'Review', sub: Math.min(10, lane.qs.length) + ' missed questions, ' + mins(Math.min(10, lane.qs.length) * 0.75) + ' min' }
+    if ((d.m || 0) >= g) return bonusStep(P);
+    const laneStep = () => lane.qs.length ? { k: 'quiz', tag: 'lane', ids: lane.qs.slice(0, 10), label: 'Review', sub: Math.min(10, lane.qs.length) + ' questions to revisit, ' + mins(Math.min(10, lane.qs.length) * 0.75) + ' min' }
       : { k: 'cards', tag: 'lane', ids: lane.cs.slice(0, 20), label: 'Review', sub: Math.min(20, lane.cs.length) + ' cards due, ' + mins(Math.min(20, lane.cs.length) * 0.1) + ' min' };
-    if (!P.virtual && P.dl <= P.F) {
+    if (inFinal(P, R)) {
       if (lane.qs.length || lane.cs.length) return laneStep();
       const ids = [];
-      for (const o of CORE.objs.slice().sort((a, b) => R.node[a.code] - R.node[b.code])) for (const id of o.qIds) if (ids.length < 10 && ids.indexOf(id) < 0 && !seen.has(id) && !(stats[id] && dayKey(stats[id].t) === t)) ids.push(id);
-      return ids.length ? { k: 'quiz', tag: 'final', ids, label: 'Final pass', sub: 'weakest topics, ' + mins(ids.length * 0.75) + ' min' } : bonusStep();
+      for (const o of CORE.objs.slice().sort((a, b) => (shakyOf(a.lessonId) ? 0 : 1) - (shakyOf(b.lessonId) ? 0 : 1) || R.node[a.code] - R.node[b.code])) for (const id of o.qIds) if (ids.length < 10 && ids.indexOf(id) < 0 && !seen.has(id) && !(stats[id] && dayKey(stats[id].t) === t)) ids.push(id);
+      return ids.length ? { k: 'quiz', tag: 'final', ids, label: 'Final pass', sub: 'weakest topics, ' + mins(ids.length * 0.75) + ' min' } : bonusStep(P);
     }
     if (lane.qs.length + lane.cs.length >= 5) return laneStep();
     for (let guard = 0; guard < 4 * CORE.objs.length; guard++) {
       const tg = d.tgt && d.tgt.step !== 'done' ? d.tgt : pinNode(P, R);
-      if (!tg) return bonusStep();
+      if (!tg) return bonusStep(P);
       const o = CORE_BY_LESSON[tg.lid], name = o.code + ' ' + o.title;
       if (tg.step === 'check') return { k: 'quiz', tag: 'check', ids: tg.asked, label: 'Check', sub: name + ', ' + mins(tg.asked.length * PLAN_SEC.q / 60) + ' min' };
+      const readToday = (lessonRead[tg.lid] && dayKey(lessonRead[tg.lid]) === t) || plan.cov[tg.lid] === t;
+      if (tg.step === 'read' && ((covered(tg.lid) && !shakyOf(tg.lid)) || readToday)) { tg.step = 'cards'; savePlan(); }   // read meanwhile
       if (tg.step === 'read') { const n = deckCount(o.lessonId, true); return { k: 'read', id: o.lessonId, label: 'Key points', sub: name + ', ' + n + ' slides, ' + mins(n * PLAN_SEC.slide / 60) + ' min' }; }
-      if (tg.step === 'cards') { const ids = o.cIds.filter(id => plan.fr[id] == null).slice(0, 20); if (ids.length) return { k: 'cards', tag: 'cards', ids, label: 'Cards', sub: name + ', ' + ids.length + ' cards, ' + mins(ids.length * PLAN_SEC.card / 60) + ' min' }; tg.step = 'q'; }
-      if (tg.step === 'q') { const ids = o.qIds.filter(id => tg.asked.indexOf(id) < 0 && R.sq(id) === 0).slice(0, 10); if (ids.length) return { k: 'quiz', tag: 'q', ids, label: 'Questions', sub: name + ', ' + ids.length + ' questions, ' + mins(ids.length * PLAN_SEC.q / 60) + ' min' }; tg.step = 'done'; d.nodes = (d.nodes || []).concat(tg.node); savePlan(); }
+      if (tg.step === 'cards') { const ids = o.cIds.filter(id => plan.fr[id] == null && !(cardState[id] && cardLastDay(cardState[id], BOX_DAYS) === t)).slice(0, 20); if (ids.length) return { k: 'cards', tag: 'cards', ids, label: 'Cards', sub: name + ', ' + ids.length + ' cards, ' + mins(ids.length * PLAN_SEC.card / 60) + ' min' }; tg.step = 'q'; }
+      if (tg.step === 'q') { const ids = o.qIds.filter(id => tg.asked.indexOf(id) < 0 && R.sq(id) === 0 && !answeredToday(id)).slice(0, 10); if (ids.length) return { k: 'quiz', tag: 'q', ids, label: 'Questions', sub: name + ', ' + ids.length + ' questions, ' + mins(ids.length * PLAN_SEC.q / 60) + ' min' }; tg.step = 'done'; d.nodes = (d.nodes || []).concat(tg.node); savePlan(); }
     }
-    return bonusStep();
+    return bonusStep(P);
   }
   // completion events move today's step cursor; nextStep is the same answer until one of these fires
-  function planDone(tag, ids) {
-    const t = todayKey(), d = dayRec(t), tg = d.tgt;
-    if (['lane', 'final', 'last', 'bonus'].indexOf(tag) >= 0) d.seen = [...new Set((d.seen || []).concat(ids || []))];
-    else if (tg && tag === 'check' && tg.step === 'check') {
+  // only the session that belongs to today's pinned step can move it (same asked ids, same objective's items, same lesson)
+  function planDone(tag, ids, lid) {
+    const t = todayKey(), d = dayRec(t), tg = d.tgt, o = tg && CORE_BY_LESSON[tg.lid], within = list => (ids || []).length && (ids || []).every(id => list.indexOf(id) >= 0);
+    if (['lane', 'final', 'last', 'bonus'].indexOf(tag) >= 0) {
+      d.seen = [...new Set((d.seen || []).concat(ids || []))];
+      for (const x of CORE.objs) { const sh = plan.shaky[x.lessonId]; if (!sh || !x.qIds.every(id => stats[id] && stats[id].last === 1 && dayKey(stats[id].t) === t)) continue; for (const k in sh) if (sh[k] < t) delete sh[k]; if (!Object.keys(sh).length) delete plan.shaky[x.lessonId]; }
+    }
+    else if (tg && tag === 'check' && tg.step === 'check' && sameSet(ids || [], tg.asked)) {
       const right = tg.asked.filter(id => stats[id] && stats[id].last === 1 && dayKey(stats[id].t) === t).length, all = right === tg.asked.length;
-      if (all) { if (!plan.cov[tg.lid]) plan.cov[tg.lid] = t; const sh = plan.shaky[tg.lid]; if (sh && Object.keys(sh).every(k => sh[k] < t)) delete plan.shaky[tg.lid]; }
-      tg.right = right; tg.step = all || covered(tg.lid) ? 'cards' : 'read';
-    } else if (tg && tag === 'read' && tg.step === 'read') tg.step = 'cards';
-    else if (tg && tag === 'cards' && tg.step === 'cards') tg.step = 'q';
-    else if (tg && tag === 'q' && tg.step === 'q') { tg.step = 'done'; d.nodes = (d.nodes || []).concat(tg.node); }
+      const missedToday = o && o.qIds.some(id => stats[id] && stats[id].last === 0 && dayKey(stats[id].t) === t);
+      if (all && !missedToday) { if (!plan.cov[tg.lid]) plan.cov[tg.lid] = t; const sh = plan.shaky[tg.lid]; if (sh) { for (const k in sh) if (sh[k] < t) delete sh[k]; if (!Object.keys(sh).length) delete plan.shaky[tg.lid]; } }
+      tg.right = right; tg.step = (all && !missedToday) || (covered(tg.lid) && !shakyOf(tg.lid)) ? 'cards' : 'read';
+    } else if (tg && tag === 'read' && tg.step === 'read' && lid === tg.lid) tg.step = 'cards';
+    else if (tg && o && tag === 'cards' && tg.step === 'cards' && within(o.cIds)) tg.step = 'q';
+    else if (tg && o && tag === 'q' && tg.step === 'q' && within(o.qIds)) { tg.step = 'done'; d.nodes = (d.nodes || []).concat(tg.node); }
     savePlan();
   }
   function runStep(st) {
@@ -1495,8 +1656,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const d = dayRec(t); delete d.g; d.tgt = null; savePlan(); $('tmore').hidden = true; renderHome();
   }
   function dateChips(t, cur) {
-    return [1, 2, 4, 6].map(w => '<button class="tchip' + (cur === t + 7 * w ? ' on' : '') + '" data-set="' + (t + 7 * w) + '">' + w + ' wk ' + fmtDay(t + 7 * w) + '</button>').join('') +
-      '<label class="tchip">Pick<input type="date" id="tpick" aria-label="Pick the exam date" min="' + keyDate(t + 1) + '" max="' + keyDate(t + 400) + '"' + (cur ? ' value="' + keyDate(cur) + '"' : '') + '></label>';
+    return '<label class="tchip">Pick a date<input type="date" id="tpick" aria-label="Pick the exam date" min="' + keyDate(t + 1) + '" max="' + keyDate(t + 400) + '"' + (cur ? ' value="' + keyDate(cur) + '"' : '') + '></label>' + [1, 2, 4, 6].map(w => '<button class="tchip' + (cur === t + 7 * w ? ' on' : '') + '" data-set="' + (t + 7 * w) + '">' + w + ' wk ' + fmtDay(t + 7 * w) + '</button>').join('');
   }
   function renderToday() {
     const P = planDates(), t = P.t, st = planState(), R = rollups(CORE, st), d = dayRec(t), rs = runState(plan.days, t);
@@ -1515,23 +1675,24 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const step = nextStep(); TODAY_STEP = step;
     $('tgoLabel').textContent = step.k === 'resume' || step.k === 'lesson' || step.k === 'done' || step.k === 'bonus' ? step.label : 'Continue: ' + step.label.toLowerCase();
     $('tgoSub').textContent = step.sub || '';
-    $('tgo').disabled = step.k === 'done';
+    $('tgo').disabled = step.k === 'done'; $('tdisc').hidden = step.k !== 'resume';
     $('tstrip').style.width = (d.g ? Math.min(100, Math.round(100 * (d.m || 0) / d.g)) : 0) + '%';
-    $('tbar').innerHTML = CORE.sections.map(x => '<i style="flex:' + x.weight + '" title="' + esc(x.name) + ', ' + x.weight + '% of the exam: ' + Math.round(100 * R.sec[x.name]) + '%"><b style="width:' + Math.round(100 * R.sec[x.name]) + '%"></b></i>').join('');
+    $('tbar').innerHTML = CORE.sections.map(x => { const sn = (SECTIONS.find(y => y.name === x.name) || {}).num || ''; return '<button class="tseg" data-sec="' + esc(x.name) + '" title="' + esc(x.name) + ', ' + x.weight + '% of the exam" aria-label="' + esc(x.name) + ', ' + x.weight + ' percent of the exam, recall ' + Math.round(100 * R.sec[x.name]) + ' percent. Open it"><b style="width:' + Math.round(100 * R.sec[x.name]) + '%"></b><span>' + esc(sn.replace(/\.0$/, '')) + '</span></button>'; }).join('');
     const left = [...CORE.q].filter(id => R.sq(id) === 0).length + [...CORE.c].filter(id => R.sc(id) === 0).length + CORE.objs.filter(o => !covered(o.lessonId)).length;
     $('tcore').textContent = 'Core ' + Math.round(100 * R.core) + '%';
-    $('tleft').textContent = left + ' left · covered, not a pass prediction';
+    $('tleft').textContent = left + ' left · not a pass prediction · sections in exam-weight order, tap one to open it';
     let line = '';
     if (P.after) line = '<span>' + fmtDay(P.ex) + ' has passed. How did it go?</span><button class="ghost small" data-out="pass">Passed</button><button class="ghost small" data-out="retake">Retake</button><button class="ghost small" data-out="later">Not yet</button>';
     else if (!storageOK) line = 'Progress is not saved in this window.';
     else if (rs.last != null && t - rs.last >= 3 && !rs.today) line = 'Welcome back. ' + (P.virtual ? '' : P.daysLeft + ' days left, ') + left + ' items to cover.';
-    else if (P.virtual || P.dl > P.F) {
+    else if (!inFinal(P, R)) {
       const lane = reviewLane(CORE, st, t), newDays = Math.max(1, P.daysLeft - P.F), mNew = newMinutes(CORE, st, leanCounts(), covered), gm = goalMinutes(mNew, lane, newDays, plan.cap);
       if (gm.binds) { const f = forecast(CORE, st, leanCounts(), covered, newDays, plan.cap, gm.rev); line = 'At this pace: ' + f.reached + ' of ' + f.of + ' topics, ' + f.weight + '% of the exam weight, by ' + fmtDay(P.virtual ? t + 28 : P.ex) + '.'; }
     }
     $('tline').innerHTML = line; $('tline').hidden = !line;
   }
   $('tgo').addEventListener('click', () => runStep(TODAY_STEP || nextStep()));
+  $('tdiscBtn').addEventListener('click', () => { del(SESSION_KEY); renderHome(); });
   $('today').addEventListener('click', e => {
     if (e.target.id === 'tpick' && e.target.showPicker) { try { e.target.showPicker(); } catch (x) {} return; }
     const b = e.target.closest('button'); if (!b) return;
@@ -1543,32 +1704,57 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     else if (b.dataset.out === 'retake' || b.dataset.out === 'later') { if (b.dataset.out === 'retake') plan.attempts.push({ exam: plan.exam, out: 'fail' }); plan.exam = null; plan.out = null; plan.opens = 0; savePlan(); $('tmore').hidden = true; renderHome(); }
   });
   $('today').addEventListener('change', e => { if (e.target.id === 'tpick' && e.target.value) setExam(dateKey(e.target.value)); });
-  const openWeakest = () => { const R = rollups(CORE, planState()), w = CORE.sections.slice().sort((a, b) => R.sec[a.name] - R.sec[b.name])[0]; if (!w) return; openSecs.add(w.name); renderBlueprint(); const el = [...document.querySelectorAll('#bp .sec')].find(x => x.dataset.sec === w.name) || $('bp'); el.scrollIntoView({ block: 'start', behavior: 'smooth' }); };
-  $('tbar').addEventListener('click', openWeakest);
-  $('tbar').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openWeakest(); } });
+  const openSection = name => { openSecs.add(name); renderBlueprint(); const el = [...document.querySelectorAll('#bp .sec')].find(x => x.dataset.sec === name) || $('bp'); el.scrollIntoView({ block: 'start' }); };
+  $('tbar').addEventListener('click', e => { const b = e.target.closest('button[data-sec]'); if (b) openSection(b.dataset.sec); });
   const refreshToday = () => { if (!document.hidden && !$('home').hidden) renderHome(); };
   document.addEventListener('visibilitychange', refreshToday); window.addEventListener('pageshow', refreshToday);
 
+  // ---------- updates: a home-screen app resumes the page it already had, so on open and on return it asks the site for
+  // the published build (version.json, never cached). The new build loads only on Home: at once if nothing was touched
+  // while checking, otherwise the next time Home is reached, so a lesson, quiz, results screen or sheet is never cut short.
+  // Progress lives in this browser's storage. A framed or local copy skips this.
+  const BUILD = 'd647b01d7e52';
+  let updateTo = null, lastCheck = 0, lastTouch = 0;
+  ['pointerdown', 'keydown', 'focusin'].forEach(ev => document.addEventListener(ev, () => { lastTouch = Date.now(); }, true));
+  window.addEventListener('scroll', () => { lastTouch = Date.now(); }, { passive: true });
+  function updateTried() { try { return sessionStorage.getItem('splunkquiz.updateTried'); } catch (e) { return null; } }
+  function homeIdle() { return !$('home').hidden && $('deck').hidden && $('cdSheet').hidden; }
+  function applyUpdate() {
+    if (!updateTo || updateTried() === updateTo) return false;
+    try { sessionStorage.setItem('splunkquiz.updateTried', updateTo); } catch (e) {}   // one try per build, so a stale cache cannot loop
+    location.replace(location.pathname + '?v=' + updateTo); return true;
+  }
+  function checkUpdate() {
+    if (!/^https?:$/.test(location.protocol) || window.top !== window || !window.fetch || document.hidden) return;
+    const started = Date.now(); if (started - lastCheck < 60000) return; lastCheck = started;
+    fetch('version.json?t=' + started, { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(v => {
+      if (!v || typeof v.build !== 'string' || !/^[0-9a-f]{6,64}$/.test(v.build)) { lastCheck = 0; return; }   // only a good answer starts the minute
+      if (v.build === BUILD) return;
+      updateTo = v.build;
+      if (homeIdle() && lastTouch < started && !(document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName))) applyUpdate();
+    }).catch(() => { lastCheck = 0; });
+  }
+  document.addEventListener('visibilitychange', checkUpdate); window.addEventListener('pageshow', checkUpdate);
+  try { if (/[?&]v=/.test(location.search)) history.replaceState(history.state, '', location.pathname + location.hash); } catch (e) {}   // tidy the address after an update
+
   function renderHome() {
-    { const sv = load(SESSION_KEY, null); if (sv && !sv.done && sv.mode === 'exam' && sv.limitSec && Date.now() > sv.startedAt + sv.limitSec * 1000) del(SESSION_KEY); }   // an expired sim is dropped, never scored as blanks
+    { const sv = load(SESSION_KEY, null); if (sv && !sv.done && sv.mode === 'exam' && sv.limitSec && Date.now() > sv.startedAt + sv.limitSec * 1000) del(SESSION_KEY);   // an expired sim is dropped, never scored as blanks
+      else if (sv && !sv.done && sv.mode !== 'exam' && !answered(sv)) del(SESSION_KEY); }   // nothing answered yet: nothing to resume
     renderToday();
     const w = weakIds().length;
     $('weakDesc').textContent = w ? w + ' questions you have missed or never seen, with instant feedback.' : 'Nothing left to retry. Every question was right on its last try.';
     $('examDesc').textContent = 'Weighted by blueprint, timed at one minute per question, no feedback until you submit.';
-    const due = dueCardIds(CARDS.map(c => c.id)).length;
+    const dueIds = dueCardIds(CARDS.map(c => c.id)), fresh = dueIds.filter(id => !cardState[id]).length, rev = dueIds.length - fresh;
     $('cardsBtn').disabled = CARDS.length === 0;
-    $('cardsDesc').textContent = CARDS.length ? due + ' of ' + CARDS.length + ' cards due now. Flip, rate yourself, and the deck schedules the rest.' : 'No deck loaded yet.';
-    const lr = ORDERED.filter(l => lessonRead[l.id]).length;
+    $('cardsDesc').textContent = !CARDS.length ? 'No deck loaded yet.' : dueIds.length ? (rev ? rev + ' review' + (rev === 1 ? '' : 's') + ' due' : 'No reviews due') + (fresh ? ', ' + fresh + ' new' : '') + '. Every card in the deck.' : 'Nothing due today. Tap to pick topics and review them anyway.';
     const open = Object.entries(deckStore.pos).filter(([id, p]) => LESSON_BY_ID[id] && !lessonRead[id] && p.i > 0 && p.i < p.n - 1).sort((a, b) => b[1].t - a[1].t)[0];
     $('continueRow').hidden = !open || (TODAY_STEP && TODAY_STEP.k === 'lesson' && TODAY_STEP.id === open[0]);
     if (open) { const pn = posNow(open[0]); $('continueNote').textContent = LESSON_BY_ID[open[0]].title + ', slide ' + (pn.i + 1) + ' of ' + pn.n + '.'; $('continueBtn').onclick = () => openDeck(open[0]); }
-    $('learnBtn').disabled = ORDERED.length === 0;
-    $('learnDesc').textContent = ORDERED.length ? lr + ' of ' + ORDERED.length + ' lessons read. Read an objective\'s explainer, then drill its cards and questions.' : 'No lessons loaded yet.';
     renderBlueprint();
     // resume
     const saved = load(SESSION_KEY, null);
     $('resumePanel').hidden = !(saved && !saved.done) || (TODAY_STEP && TODAY_STEP.k === 'resume');
-    if (saved && !saved.done) { const answered = Object.keys(saved.picks).length; $('resumeNote').textContent = (saved.mode === 'exam' ? 'Exam simulation' : 'Drill') + ', ' + answered + ' of ' + saved.ids.length + ' answered.'; }
+    if (saved && !saved.done) { $('resumeNote').textContent = (saved.mode === 'exam' ? 'Exam simulation' : (MODE_NAME[saved.mode] || 'Drill')) + ', ' + answered(saved) + ' of ' + saved.ids.length + ' answered.'; }
   }
 
   function currentQ() { return BY_ID[S.ids[S.cur]]; }
@@ -1612,7 +1798,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     $('flagBtn').textContent = S.flags[id] ? 'Unflag' : 'Flag';
     $('submitConfirm').hidden = true;
     renderNav();
-    save(SESSION_KEY, S);
+    persist();
   }
 
   function renderNav() {
@@ -1633,9 +1819,9 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   function onPick() {
     const q = currentQ(), id = q.id;
     const chosen = [...document.querySelectorAll('#opts input:checked')].map(i => Number(i.value));
-    S.picks[id] = chosen;
+    if (chosen.length) S.picks[id] = chosen; else delete S.picks[id];
     $('checkBtn').disabled = chosen.length === 0;
-    renderNav(); save(SESSION_KEY, S);
+    renderNav(); persist();
   }
 
   function check() {
@@ -1659,8 +1845,9 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     stopTimer();
     // an unanswered question in a timed-out or early-submitted sim stays unseen instead of counting as wrong
     if (S.mode === 'exam') { let right = 0; for (const id of S.ids) { const p = S.picks[id] || []; if (!p.length) continue; const ok = sameSet(p, BY_ID[id].answer); if (ok) right++; record(id, ok); } plan.sims.push({ d: todayKey(), n: S.ids.length, right }); plan.sims = plan.sims.slice(-8); savePlan(); }
-    if (S.plan) planDone(S.plan, S.ids);
-    S.done = true; S.timedOut = !!timedOut; save(SESSION_KEY, S); del(SESSION_KEY);
+    if (S.plan && dayKey(S.startedAt) === todayKey()) planDone(S.plan, S.ids);
+    S.done = true; S.timedOut = !!timedOut;
+    { const old = load(SESSION_KEY, null); if (!old || old.startedAt === S.startedAt) del(SESSION_KEY); }   // another session's saved place stays
     renderResults(); showView('results');
   }
 
@@ -1708,12 +1895,12 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     else {
       ids = selectedCards();
       if (!$('optCram').checked) ids = dueCardIds(ids);
-      if (!ids.length) { $('cardsDesc').textContent = 'Nothing due in the selected sections. Tick "cram everything" to review anyway, or select more below.'; return; }
+      if (!ids.length) { $('cardsDesc').textContent = 'Nothing due in the ticked topics. Tick "include ones not due yet" to review anyway.'; return; }
     }
     if (!ids.length) return;
     // unseen first, then by box (shakiest first), random within
     ids = shuffle(ids).sort((a, b) => ((cardState[a] || { box: -1 }).box) - ((cardState[b] || { box: -1 }).box));
-    C = { ids, i: 0, flipped: false, again: [], rated: { 0: 0, 1: 0, 2: 0, 3: 0 }, total: ids.length, fromLesson: (opts && opts.fromLesson) || null, plan: (opts && opts.plan) || null, snap: snapRoll() };
+    C = { ids, i: 0, flipped: false, again: [], rated: { 0: 0, 1: 0, 2: 0, 3: 0 }, total: ids.length, fromLesson: (opts && opts.fromLesson) || null, fromLean: !!(opts && opts.fromLean), fromPlan: (opts && opts.fromPlan) || null, plan: (opts && opts.plan) || null, snap: snapRoll() };
     $('csummary').hidden = true; $('card').parentElement.hidden = false;
     showView('cards'); renderCard();
   }
@@ -1758,12 +1945,13 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     $('cagain').classList.toggle('primary', $('cnext').hidden);
     window.scrollTo(0, 0);
   }
-  $('clesson').addEventListener('click', () => { const id = C && C.fromLesson; C = null; if (id) openLesson(id, { at: 'finish' }); else { renderHome(); showView('home'); } });
-  $('rlesson').addEventListener('click', () => { const id = S && S.fromLesson; S = null; if (id) openLesson(id, { at: 'finish' }); else { renderHome(); showView('home'); } });
+  const backToLesson = x => x && x.fromLesson ? openLesson(x.fromLesson, { at: 'finish', lean: x.fromLean, plan: x.fromPlan, forceDeck: x.fromLean }) : (renderHome(), showView('home'));
+  $('clesson').addEventListener('click', () => { const x = C; C = null; backToLesson(x); });
+  $('rlesson').addEventListener('click', () => { const x = S; S = null; backToLesson(x); });
   $('card').addEventListener('click', flipCard);
   $('cflip').addEventListener('click', flipCard);
   $('crate').querySelectorAll('button').forEach(b => b.addEventListener('click', () => rateCard(Number(b.dataset.r))));
-  $('cagain').addEventListener('click', () => { const ids = shuffle(C.again); C = { ids, i: 0, flipped: false, again: [], rated: { 0: 0, 1: 0, 2: 0, 3: 0 }, total: ids.length, fromLesson: C.fromLesson }; $('csummary').hidden = true; $('card').parentElement.hidden = false; renderCard(); });
+  $('cagain').addEventListener('click', () => { const ids = shuffle(C.again); C = { ids, i: 0, flipped: false, again: [], rated: { 0: 0, 1: 0, 2: 0, 3: 0 }, total: ids.length, fromLesson: C.fromLesson, fromLean: C.fromLean, fromPlan: C.fromPlan }; $('csummary').hidden = true; $('card').parentElement.hidden = false; renderCard(); });
   $('chome').addEventListener('click', () => { C = null; renderHome(); showView('home'); });
   $('cnext').addEventListener('click', () => { C = null; runStep(nextStep()); });
   $('rnext').addEventListener('click', () => { S = null; runStep(nextStep()); });
@@ -1780,7 +1968,8 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (mode === 'exam') { const n = Math.max(5, Math.min(Q.length, Number($('optExamN').value) || 60)); start('exam', pickExam(n).map(q => q.id)); }
     else if (mode === 'quick') start('quick', shuffle(Q).slice(0, 20).map(q => q.id));
     else if (mode === 'weak') { const ids = weakIds(); if (!ids.length) return; start('weak', shuffle(ids)); }
-    else if (mode === 'cards') startCards();
+    else if (mode === 'cards') { const ids = dueCardIds(CARDS.map(c => c.id)); if (ids.length) startCards(ids); else openSheet(true); }
+    else if (mode === 'custom') openSheet();
     else if (mode === 'learn') showLessonIndex();
     else if (mode === 'drill') { const ids = shuffle(selectedQ()); if (!ids.length) return; start('drill', ids); }
   }));
@@ -1791,15 +1980,16 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   $('submitBtn').addEventListener('click', askSubmit);
   $('submitYes').addEventListener('click', () => finish(false));
   $('submitNo').addEventListener('click', () => { $('submitConfirm').hidden = true; });
-  $('homeBtn').addEventListener('click', () => { stopTimer(); if (S && !S.done) save(SESSION_KEY, S); S = null; C = null; LV = null; renderHome(); showView('home'); });
+  $('homeBtn').addEventListener('click', () => { stopTimer(); persist(); S = null; C = null; LV = null; renderHome(); showView('home'); });
   $('backHome').addEventListener('click', () => { S = null; renderHome(); showView('home'); });
   $('retryMissed').addEventListener('click', () => { const ids = S.ids.filter(id => !sameSet(S.picks[id] || [], BY_ID[id].answer)); start('retry', shuffle(ids)); });
   $('resumeBtn').addEventListener('click', () => { const saved = load(SESSION_KEY, null); if (!saved) return; S = saved; showView('quiz'); renderQ(); startTimer(); });
   $('discardBtn').addEventListener('click', () => { del(SESSION_KEY); renderHome(); });
-  function setPick(pred) { pickOff = new Set(); for (const s of SECTIONS) for (const o of s.objs) if (!pred(s)) pickOff.add(o.id); savePick(); renderBlueprint(); }
+  function setPick(pred) { pickOff = new Set(); for (const s of SECTIONS) for (const o of s.objs) if (!pred(s)) pickOff.add(o.id); savePick(); renderSheet(); }
   $('selAll').addEventListener('click', () => setPick(() => true));
   $('selNone').addEventListener('click', () => setPick(() => false));
   $('selExam').addEventListener('click', () => setPick(s => s.weight > 0));
+  $('selWeak').addEventListener('click', () => { const R = rollups(CORE, planState()), w = new Set(CORE.sections.slice().sort((a, b) => R.sec[a.name] - R.sec[b.name]).slice(0, 3).map(x => x.name)); setPick(s => w.has(s.name)); });
   $('resetBtn').addEventListener('click', () => { const b = $('resetBtn'); if (b.dataset.armed) { stats = {}; cardState = {}; lessonRead = {}; deckStore = { pos: {}, prefs: deckStore.prefs }; D = null; plan = Object.assign(planDefaults(), { exam: plan.exam, set: plan.set, runway: plan.runway, cap: plan.cap, attempts: plan.attempts, bf: 1 }); savePlan(); del(STATS_KEY); del(SESSION_KEY); del(CARD_KEY); del(LESSON_KEY); saveDeck(); clearDeckCounts(); delete b.dataset.armed; b.textContent = 'Reset history'; renderHome(); } else { b.dataset.armed = '1'; b.textContent = 'Click again to confirm reset'; setTimeout(() => { delete b.dataset.armed; b.textContent = 'Reset history'; }, 4000); } });
   document.addEventListener('keydown', e => {
     if ($('quiz').hidden || e.target.tagName === 'INPUT' && e.target.type === 'number') return;
@@ -1812,7 +2002,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     else if (k === 'F' && !e.metaKey && !e.ctrlKey) $('flagBtn').click();
   });
 
-  backfill(); buildModel(); renderHome(); showView('home');
+  backfill(); buildModel(); renderHome(); showView('home'); checkUpdate();
 })();
 </script>
 
