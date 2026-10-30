@@ -154,6 +154,10 @@ body.deck-open .topbar { display: none; }
 .dslide p { line-height: 1.6; }
 .dslide .dcont { color: var(--muted); font-size: 0.78rem; font-style: italic; }
 .dslide .dlead { color: var(--muted); }
+.dslide .slines { display: flex; flex-direction: column; margin: -4px 0; }
+.dslide .sl { display: block; line-height: 1.55; padding: 4px 8px; margin: 0 -8px; cursor: pointer; }
+.dslide .sl + .sl { border-top: 1px solid var(--line); }
+.dslide .sl.on { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
 .dslide ul, .dslide ol { margin: 0; padding-left: 1.25em; display: flex; flex-direction: column; gap: 10px; }
 .dslide li::marker { color: var(--accent); }
 .dslide pre { margin: 0; padding: 12px 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; font-family: var(--mono); font-size: max(12.5px, 0.84rem); line-height: 1.5; overflow-x: auto; }
@@ -453,7 +457,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     <div class="eyebrow" style="margin-top:6px">Settings</div>
     <div class="dset">Text <span class="seg" id="dsize"><button data-v="0">S</button><button data-v="1">M</button><button data-v="2">L</button></span>
       Slides <span class="seg" id="ddensity"><button data-v="0.8">Roomy</button><button data-v="1">Standard</button><button data-v="1.25">Dense</button></span></div>
-    <div class="dset"><label><input type="checkbox" id="dwrap"> Wrap code</label><label><input type="checkbox" id="dreveal"> Hide trap answers until tapped</label><label><input type="checkbox" id="dwarm"> Warm-up cards</label><label><input type="checkbox" id="drecall"> Recall: hide values until tapped</label></div>
+    <div class="dset"><label><input type="checkbox" id="dwrap"> Wrap code</label><label><input type="checkbox" id="dreveal"> Hide trap answers until tapped</label><label><input type="checkbox" id="dwarm"> Warm-up cards</label><label><input type="checkbox" id="drecall"> Recall: hide values until tapped</label><label><input type="checkbox" id="dlines"> One sentence per line</label></div>
     <div class="dlegend"><span><mark class="tok v">60 seconds</mark> value to memorize</span><span><code class="nm">restart_timeout</code> name to recognize</span><span><span class="tr">Trap</span> wrong belief</span><span><span class="tt">Truth</span> the rule</span></div>
     <div class="actions"><button class="ghost small" id="dpage">Read as one page</button><button class="ghost small" id="drestart">Start over</button></div>
   </div>
@@ -686,7 +690,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   // <deck-compiler>
   // Pure functions over a lesson object. No DOM. The Node harness lessons-build/deck-check.js extracts this region and
   // proves every section is reproduced word for word and every fact, trap, practice and term appears exactly once.
-  const DECK_P = { target: 80, hard: 100, mergeMax: 90, mergeEach: 45, listItems: 6, listWords: 90, codeLines: 16, factWords: 70, factMax: 4, termMax: 4, tinyTail: 25, glue: 25 };
+  const DECK_P = { target: 80, hard: 100, mergeMax: 90, mergeEach: 45, listItems: 6, listWords: 90, codeLines: 16, factWords: 70, factMax: 4, termMax: 4, tinyTail: 25, glue: 25, lineWords: 40, lineCost: 5 };
   const wc = s => (String(s).match(/\S+/g) || []).length;
   const ANAPHOR = /^(It|Its|This|That|These|Those|They|Their|Both|Neither|Either|Each|Such|Doing so|Here|There|The same|The latter|The former|Then|Otherwise|Also|And|But|So|Because|For example|For instance|In that case|In this case)\b/;
   function sentences(text) {
@@ -700,7 +704,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     return parts.map(p => p.replace(/․/g, '.').replace(/\u0001(\d+)\u0002/g, (x, i) => masks[+i]));
   }
   function chunkSentences(sents, P) {
-    const w = sents.map(wc), T = w.reduce((a, b) => a + b, 0);
+    const w = sents.map(s => wc(s) + (P.lineCost || 0)), T = w.reduce((a, b) => a + b, 0);
     if (T <= P.hard || sents.length < 2) return { chunks: [sents], forced: 0 };
     const k = Math.max(2, Math.ceil(T / (P.target + 10)));
     const n = sents.length, pre = [0]; w.forEach((x, i) => pre.push(pre[i] + x));
@@ -718,6 +722,9 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const chunks = cuts.map(([a, b], idx) => { if (idx > 0 && ANAPHOR.test(sents[a])) forced++; return sents.slice(a, b); });
     return { chunks, forced };
   }
+  // one sentence per line for dense text: a paragraph or bullet of lineWords+ words with two or more sentences renders each
+  // sentence as its own line; the lines are substrings of the text, so joining them with a space gives it back (deck-check proves it)
+  function sentLines(text) { const t = String(text); if (wc(t) < DECK_P.lineWords) return [t]; const s = sentences(t).filter(x => x.trim()); return s.length < 2 ? [t] : s; }
   function listItems(text) { return String(text).split('\n').map(s => s.replace(/^\s*[-*]\s*/, '').trim()).filter(Boolean); }
   function listShape(items) {
     const numbered = items.length > 0 && items.every(i => /^(\d+)[.)]\s+/.test(i));
@@ -743,7 +750,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   }
   function packList(items, lead, P) {
     const lw = lead ? wc(lead) : 0, groups = []; let cur = [], cw = lw;
-    for (const it of items) { const w = wc(it); if (cur.length && (cw + w > P.listWords || cur.length >= P.listItems)) { groups.push(cur); cur = []; cw = 0; } cur.push(it); cw += w; }
+    for (const it of items) { const w = wc(it) + (P.lineCost ? P.lineCost * (sentLines(it).length - 1) : 0); if (cur.length && (cw + w > P.listWords || cur.length >= P.listItems)) { groups.push(cur); cur = []; cw = 0; } cur.push(it); cw += w; }
     if (cur.length) groups.push(cur);
     if (groups.length > 1 && groups[groups.length - 1].length === 1 && groups[groups.length - 2].length > 2) groups[groups.length - 1].unshift(groups[groups.length - 2].pop());
     return groups;
@@ -767,7 +774,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
         const lead = !nxBreak && h !== 'keep' && ((/:\s*$/.test(b.text.trim()) && nx0 && (nx0.type === 'ul' || nx0.type === 'code')) || shortLead || (h === 'join' && nx0 && nx0.type !== 'p'));
         if (lead) { units.push({ k: bl[i + 1].type, lead: b.text, text: bl[i + 1].text, lang: bl[i + 1].lang, bi: [b.bi, bl[i + 1].bi], brk: h === 'break', steps: H[bl[i + 1].bi] === 'steps' }); i++; continue; }
         const { chunks } = h === 'keep' ? { chunks: [sentences(b.text)] } : chunkSentences(sentences(b.text), P);
-        chunks.forEach((c, ci) => units.push({ k: 'p', sents: c, w: c.reduce((a, s) => a + wc(s), 0), cont: ci > 0, forced: ci > 0 && ANAPHOR.test(c[0]) ? 1 : 0, bi: [b.bi], brk: ci === 0 && h === 'break', join: h === 'join', keep: h === 'keep' }));
+        chunks.forEach((c, ci) => units.push({ k: 'p', sents: c, w: c.reduce((a, s) => a + wc(s) + (c.length > 1 ? P.lineCost : 0), 0), cont: ci > 0, forced: ci > 0 && ANAPHOR.test(c[0]) ? 1 : 0, bi: [b.bi], brk: ci === 0 && h === 'break', join: h === 'join', keep: h === 'keep' }));
       } else if (b.type === 'ul') units.push({ k: 'ul', text: b.text, bi: [b.bi], brk: h === 'break', steps: h === 'steps' });
       else units.push({ k: 'code', text: b.text, lang: b.lang, bi: [b.bi], brk: h === 'break' });
     }
@@ -800,11 +807,11 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   // opts: {density: 0.8|1|1.25, hints: [...], warm: [cardIds], sources: true}
   function compileDeck(l, opts) {
     const o = opts || {}, d = o.density || 1;
-    const P = Object.assign({}, DECK_P, { target: Math.round(DECK_P.target * d), hard: Math.round(DECK_P.hard * d), mergeMax: Math.round(DECK_P.mergeMax * d), mergeEach: Math.round(DECK_P.mergeEach * d), listWords: Math.round(DECK_P.listWords * d), factWords: Math.round(DECK_P.factWords * d), codeLines: Math.round(DECK_P.codeLines * d) });
+    const P = Object.assign({}, DECK_P, { target: Math.round(DECK_P.target * d), hard: Math.round(DECK_P.hard * d), mergeMax: Math.round(DECK_P.mergeMax * d), mergeEach: Math.round(DECK_P.mergeEach * d), lineCost: o.lines ? DECK_P.lineCost : 0, listWords: Math.round(DECK_P.listWords * d), factWords: Math.round(DECK_P.factWords * d), codeLines: Math.round(DECK_P.codeLines * d) });
     const S = [], add = s => { S.push(s); return s; };
     add({ k: 'title', ch: 'Start', w: wc(l.title), pid: 'title' });
     add({ k: 'intro', ch: 'Start', w: wc(l.summary), text: l.summary, pid: 'intro' });
-    const fs = sentences(l.examFocus || ''), fw = wc(l.examFocus || '');
+    const fs = sentences(l.examFocus || ''), fw = wc(l.examFocus || '') + (fs.length > 1 ? P.lineCost * fs.length : 0);
     (fw <= Math.round(P.hard * 0.85) ? [fs] : chunkSentences(fs, Object.assign({}, P, { target: Math.round(P.target * 0.8), hard: Math.round(P.hard * 0.85) })).chunks).forEach((c, i) => add({ k: 'focus', ch: 'Start', w: c.reduce((a, s) => a + wc(s), 0), text: c.join(' '), cont: i > 0, pid: 'focus.' + i }));
     (o.warm || []).forEach((cid, i) => add({ k: 'warm', ch: 'Start', w: 0, card: cid, pid: 'warm.' + i }));
     const seen = {};
@@ -833,12 +840,12 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   const Q_LESSONS = {}; for (const l of LESSONS) for (const q of (l.questionIds || [])) (Q_LESSONS[q] = Q_LESSONS[q] || []).push(l.id);
   function questionValues(qid) { return [...new Set((Q_LESSONS[qid] || []).flatMap(lessonValues))]; }
   const DECK_KEY = 'splunkquiz.deck.v1';
-  let deckStore = load(DECK_KEY, {}); deckStore.pos = deckStore.pos || {}; deckStore.prefs = Object.assign({ size: 1, density: 1, wrap: true, reveal: true, warm: true, recall: false, view: 'slides' }, deckStore.prefs || {});
+  let deckStore = load(DECK_KEY, {}); deckStore.pos = deckStore.pos || {}; deckStore.prefs = Object.assign({ size: 1, density: 1, wrap: true, reveal: true, warm: true, recall: false, lines: true, view: 'slides' }, deckStore.prefs || {});
   function saveDeck() { save(DECK_KEY, deckStore); }
   let D = null;   // {id, slides, chapters, i, max, revealed:{}, fooled:{}, flipped:{}, toastTimer}
   const deckCountCache = {};
   function warmCount(l) { if (!deckStore.prefs.warm) return 0; const ids = (l.cardIds || []).filter(x => CARD_BY_ID[x]); return ids.length < 2 ? 0 : Math.min(3, Math.max(2, Math.round(ids.length / 8))); }
-  function deckCount(id) { if (deckCountCache[id] == null) { const l = LESSON_BY_ID[id]; deckCountCache[id] = l ? compileDeck(l, { density: deckStore.prefs.density, hints: HINTS[id], warm: (l.cardIds || []).filter(x => CARD_BY_ID[x]).slice(0, warmCount(l)) }).slides.length : 0; } return deckCountCache[id]; }
+  function deckCount(id) { if (deckCountCache[id] == null) { const l = LESSON_BY_ID[id]; deckCountCache[id] = l ? compileDeck(l, { density: deckStore.prefs.density, lines: deckStore.prefs.lines, hints: HINTS[id], warm: (l.cardIds || []).filter(x => CARD_BY_ID[x]).slice(0, warmCount(l)) }).slides.length : 0; } return deckCountCache[id]; }
   // where a saved position lands in the deck as compiled now (density and warm-up may have changed since it was saved)
   function posNow(id) { const pos = deckStore.pos[id]; if (!pos) return null; const n = deckCount(id); return { i: Math.min(n - 1, Math.round(pos.i / Math.max(1, pos.n) * n)), n }; }
   function clearDeckCounts() { for (const k in deckCountCache) delete deckCountCache[k]; }
@@ -850,7 +857,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const l = LESSON_BY_ID[id];
     const same = (keepPos || carry) && D && D.id === id;
     const warm = same ? D.warm : pickWarm(l);
-    const c = compileDeck(l, { density: deckStore.prefs.density, hints: HINTS[id], warm });
+    const c = compileDeck(l, { density: deckStore.prefs.density, lines: deckStore.prefs.lines, hints: HINTS[id], warm });
     const prev = same ? D : null;   // revealed, fooled and flipped are keyed by slide pid, which survives a recompile
     D = { id, slides: c.slides, chapters: c.chapters, i: 0, max: 0, warm, revealed: prev ? prev.revealed : {}, fooled: prev ? prev.fooled : {}, flipped: prev ? prev.flipped : {} };
     return D;
@@ -915,22 +922,29 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     let h = '';
     const run = () => s.sec != null ? (first ? '<div class="dkick">Part ' + secIdx + ' of ' + secN + '</div><h3>' + esc(s.h) + '</h3>' : '<div class="drun">' + esc(s.h) + '</div>') : '';
     const cont = () => s.cont ? '<div class="dcont">continued</div>' : '';
+    // dense text as one sentence per line; tapping a line holds your place (kept per slide while the deck is open)
+    let ln = 0; const hold = (D.hold = D.hold || {})[s.pid];
+    const T = (t, para) => {
+      const ls = deckStore.prefs.lines ? sentLines(t) : [t];
+      if (ls.length < 2) return para ? '<p>' + H(inline(t)) + '</p>' : H(inline(t));
+      return '<div class="slines">' + ls.map(x => { const n = ln++; return '<span class="sl' + (hold === n ? ' on' : '') + '" data-ln="' + n + '">' + H(inline(x)) + '</span>'; }).join('') + '</div>';
+    };
     if (s.k === 'title') {
       const q = (l.questionIds || []).filter(x => BY_ID[x]).length, c = (l.cardIds || []).filter(x => CARD_BY_ID[x]).length, words = l.sections.reduce((a, sec) => a + sec.blocks.reduce((b, x) => b + wc(x.text), 0), 0);
       h = '<div class="drun">' + esc(l.domain) + (d.weight ? ' · ' + d.weight + '% of exam' : ' · background') + '</div><h2>' + esc(l.title) + '</h2>' + (l.code !== 'X' ? '<p class="note">Objective ' + esc(l.code) + ': ' + esc(l.objective) + '</p>' : '') +
         '<p class="dstats">' + D.slides.length + ' slides · about ' + Math.max(3, Math.round(words / 220)) + ' min · ' + q + ' questions · ' + c + ' cards</p>' + (lessonRead[l.id] ? '<p class="note">You have read this lesson.</p>' : '');
-    } else if (s.k === 'intro') h = '<div class="dkick">What this covers</div><p>' + H(inline(s.text)) + '</p>';
-    else if (s.k === 'focus') h = '<div class="dkick">How the exam tests this</div><div class="dcallout">' + H(inline(s.text)) + '</div>' + cont();
+    } else if (s.k === 'intro') h = '<div class="dkick">What this covers</div>' + T(s.text, true);
+    else if (s.k === 'focus') h = '<div class="dkick">How the exam tests this</div><div class="dcallout">' + T(s.text, false) + '</div>' + cont();
     else if (s.k === 'warm') {
       const c = CARD_BY_ID[s.card], flipped = !!D.flipped[s.pid];
       h = '<div class="dkick">Warm-up · what do you already know?</div><div class="dcard"><div class="front">' + esc(c.front) + '</div>' + (flipped ? '<div class="dback">' + hlTagged(c.back, cardTag(c.id, D.id), false) + '</div>' : '') + '</div><p class="note">Nothing is scored here. The card, with its worked example, comes back in the drill after the lesson.</p>';
-    } else if (s.k === 'prose') h = run() + cont() + '<p>' + H(inline(s.text)) + '</p>';
+    } else if (s.k === 'prose') h = run() + cont() + T(s.text, true);
     else if (s.k === 'list') {
       const tag = s.shape && s.shape.numbered ? 'ol' : 'ul';
       const items = s.shape && s.shape.numbered ? s.items.map(x => x.replace(/^(\d+)[.)]\s+/, '')) : s.items;
       const startN = s.shape && s.shape.numbered ? (parseInt(s.items[0], 10) || 1) : 1;
       const shown = s.steps ? (D.revealed[s.pid] == null ? 1 : D.revealed[s.pid]) : items.length;
-      h = run() + cont() + (s.lead ? '<p class="' + (s.leadCont ? 'dlead' : '') + '">' + H(inline(s.lead)) + '</p>' : '') + '<' + tag + (tag === 'ol' && startN > 1 ? ' start="' + startN + '"' : '') + '>' + items.slice(0, shown).map(x => '<li>' + H(inline(x)) + '</li>').join('') + '</' + tag + '>' + (s.steps && shown < items.length ? '<p class="note">Next reveals the next step (' + shown + ' of ' + items.length + ')</p>' : '');
+      h = run() + cont() + (s.lead ? '<p class="' + (s.leadCont ? 'dlead' : '') + '">' + H(inline(s.lead)) + '</p>' : '') + '<' + tag + (tag === 'ol' && startN > 1 ? ' start="' + startN + '"' : '') + '>' + items.slice(0, shown).map(x => '<li>' + T(x, false) + '</li>').join('') + '</' + tag + '>' + (s.steps && shown < items.length ? '<p class="note">Next reveals the next step (' + shown + ' of ' + items.length + ')</p>' : '');
     } else if (s.k === 'code') {
       h = run() + cont() + (s.lead ? '<p>' + H(inline(s.lead)) + '</p>' : '') + (s.multi ? s.blocks.map((b, bi) => { const lg = (s.langs || [])[bi] || s.lang; return codeChip(b, lg) + codeHtml(b, lg); }).join('') : codeChip(s.text, s.lang) + codeHtml(s.text, s.lang)) + (s.part ? '<div class="dcont">part ' + s.part[0] + ' of ' + s.part[1] + '</div>' : '');
     } else if (s.k === 'fact') {
@@ -997,7 +1011,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     D.chapters.forEach(c => { const b = document.createElement('button'); b.className = 'dchrow' + (c === cur ? ' cur' : ''); b.innerHTML = '<span class="n">' + c.n + '</span><span class="t">' + esc(c.label) + '</span><span class="tick">' + (D.max >= c.start + c.n - 1 ? 'done' : D.max >= c.start ? 'here' : '') + '</span>'; b.addEventListener('click', () => { hideSheet(); renderDeck(c.start); }); box.appendChild(b); });
     $('dsize').querySelectorAll('button').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === deckStore.prefs.size));
     $('ddensity').querySelectorAll('button').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === deckStore.prefs.density));
-    $('dwrap').checked = !!deckStore.prefs.wrap; $('dreveal').checked = !!deckStore.prefs.reveal; $('dwarm').checked = !!deckStore.prefs.warm; $('drecall').checked = !!deckStore.prefs.recall;
+    $('dwrap').checked = !!deckStore.prefs.wrap; $('dreveal').checked = !!deckStore.prefs.reveal; $('dwarm').checked = !!deckStore.prefs.warm; $('drecall').checked = !!deckStore.prefs.recall; $('dlines').checked = !!deckStore.prefs.lines;
     $('dsheet').hidden = false; $('dscrim').hidden = false; $('dtoast').hidden = true;
   }
   function hideSheet() { $('dsheet').hidden = true; $('dscrim').hidden = true; }
@@ -1021,6 +1035,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   $('dwrap').addEventListener('change', e => { deckStore.prefs.wrap = e.target.checked; saveDeck(); renderDeck(D.i); });
   $('dreveal').addEventListener('change', e => { deckStore.prefs.reveal = e.target.checked; saveDeck(); renderDeck(D.i); });
   $('drecall').addEventListener('change', e => { deckStore.prefs.recall = e.target.checked; saveDeck(); renderDeck(D.i); });
+  $('dlines').addEventListener('change', e => { deckStore.prefs.lines = e.target.checked; saveDeck(); recompileKeepPlace(); });
   $('dwarm').addEventListener('change', e => { deckStore.prefs.warm = e.target.checked; saveDeck(); hideSheet(); recompileKeepPlace(true); });
   $('dpage').addEventListener('click', () => { deckStore.prefs.view = 'page'; saveDeck(); const id = D.id; closeDeck(false); renderLessonPage(id); });
   $('drestart').addEventListener('click', () => { hideSheet(); D.revealed = {}; D.fooled = {}; D.flipped = {}; D.max = 0; renderDeck(0); });
@@ -1028,6 +1043,14 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   $('dslide').addEventListener('click', e => {
     const mk = e.target.closest('mark.tok.hid'); if (mk) { mk.textContent = mk.dataset.tok; mk.classList.remove('hid'); return; }
     const li = e.target.closest('li[data-fact]'); if (li && !e.target.closest('a')) { li.classList.toggle('open'); return; }
+    const sl = e.target.closest('.sl');
+    if (sl && $('dslide').contains(sl) && !e.target.closest('a') && !(window.getSelection && String(window.getSelection()).length)) {
+      const pid = D.slides[D.i].pid, n = Number(sl.dataset.ln), on = D.hold[pid] === n;
+      if (on) delete D.hold[pid]; else D.hold[pid] = n;
+      $('dslide').querySelectorAll('.sl.on').forEach(x => x.classList.remove('on'));
+      if (!on) sl.classList.add('on');
+      return;
+    }
     const act = e.target.closest('button[data-act]'); if (!act) return;
     const l = LESSON_BY_ID[D.id], a = act.dataset.act;
     if (a === 'cards') { const ids = (l.cardIds || []).filter(x => CARD_BY_ID[x]); closeDeck(false); startCards(ids, { fromLesson: D.id }); }
