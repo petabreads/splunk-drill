@@ -267,6 +267,37 @@ body.sheet-open { overflow: hidden; }
 .bkhead { margin: 6px 0 0; font-size: 1rem; }
 .bktext { width: 100%; box-sizing: border-box; min-height: 5.5em; font: 16px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--panel-2); color: inherit; border: 1px solid var(--line); border-radius: 8px; padding: 8px; word-break: break-all; resize: vertical; }
 .bkwarn { color: var(--bad); font-weight: 600; }
+/* ---- readiness on the Today card and its plan sheet ---- */
+.tready { display: flex; flex-direction: column; gap: 2px; width: 100%; }
+.tready b { color: var(--fg); }
+.tready .tbtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.tready .tbtns button { min-height: 40px; }
+.tbehind { color: var(--flag); font-weight: 600; }
+/* today's checklist */
+.tplan { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.tph { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.tph b { color: var(--fg); font-size: 1rem; }
+.tph span { color: var(--muted); font-size: 0.85rem; }
+.tpbar { height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
+.tpbar b { display: block; height: 100%; background: var(--good); }
+.tpsub { color: var(--muted); font-size: 0.85rem; }
+.tlist { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.trow2 { width: 100%; min-height: 44px; display: grid; grid-template-columns: 1.3em 2.2em minmax(0, 1fr) auto; align-items: center; gap: 8px; text-align: left; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; }
+.trow2 .t { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; }
+.trow2 .c, .trow2 .m { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+.trow2 i { font-style: normal; text-align: center; color: var(--muted); }
+.trow2.part i { color: var(--flag); }
+.trow2.done { border-color: color-mix(in srgb, var(--good) 45%, var(--line)); background: var(--good-bg); }
+.trow2.done i, .trow2.done .m { color: var(--good); font-weight: 600; }
+.tdays { display: flex; flex-direction: column; gap: 2px; color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+.tdays b { color: var(--fg); font-weight: 600; }
+.rdays { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.rdays li { border-top: 1px solid var(--line); padding-top: 6px; display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; }
+.rdays li div { grid-column: 1 / -1; color: var(--muted); font-size: 0.9rem; }
+.rdays li span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.rdsec { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.rdsec td { padding: 4px 4px; border-top: 1px solid var(--line); vertical-align: top; }
+.rdsec td:nth-child(3), .rdsec td:nth-child(4), .rdsec td:nth-child(5) { white-space: nowrap; color: var(--muted); text-align: right; }
 button.bkdanger { border-color: var(--bad); color: var(--bad); }
 .cdsec label, .cdobj { display: flex; gap: 8px; align-items: center; cursor: pointer; min-width: 0; }
 .cdsec label { flex: 1; font-weight: 600; font-size: 0.92rem; }
@@ -545,6 +576,10 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     <div class="cdgo"><button class="primary" id="cdDrill">Drill</button><button id="cdCards">Review cards</button></div>
   </div>
 </div>
+
+<!-- PLAN TO THE READY-BY DAY: minutes left, day by day, what does not fit, by section -->
+<div class="hscrim" id="rdScrim" hidden></div>
+<div class="hsheet" id="rdSheet" hidden role="dialog" aria-modal="true" aria-label="Plan to the ready-by day"></div>
 
 <!-- BACK UP OR RESTORE: all progress as one block of text for Notes or Mail, and the way back -->
 <div class="hscrim" id="bkScrim" hidden></div>
@@ -1007,6 +1042,16 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   // Pure exam-date planning over the bundled content and the stores: no DOM, no storage, no module state. lessons-build/
   // plan-check.js extracts this region and tests it in Node under several time zones. Plan: plans/progress-tracking.md.
   const PLAN_SEC = { slide: 15, card: 12, q: 65, cardRe: 6, qRe: 45 };   // estimated seconds per step
+  // your pace: seconds per slide, card and question as a running mean of measured times (each sample capped, older samples
+  // fade), pulled toward a realistic start worth about 4 samples. The start reflects measured use: about a minute per full-lesson
+  // slide and 25 to 55 s per question, against the 15 s per slide in PLAN_SEC
+  const PACE_DEFAULT = { slide: 40, card: 15, q: 55 };
+  function paceOf(pace) {
+    const p = pace || {}, k = x => { const v = p[x] || {}; return ((v.s || 0) + PACE_DEFAULT[x] * 4) / ((v.n || 0) + 4); };
+    const slide = k('slide'), card = k('card'), q = k('q');
+    return { slide, card, q, cardRe: card * 0.6, qRe: q * 0.75 };
+  }
+  function paceAdd(pace, kind, secs) { const v = pace[kind] || { s: 0, n: 0 }; pace[kind] = { s: v.s * 0.98 + secs, n: v.n * 0.98 + 1 }; return pace; }
   // study day: rolls over at 04:00 local; days since 1970 from local calendar parts, so a clock change never shifts it
   function dayKey(t) { const d = new Date(t); if (d.getHours() < 4) d.setDate(d.getDate() - 1); return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); }
   function dateKey(s) { const m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(s || ''); return m ? Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5) : null; }
@@ -1055,6 +1100,38 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   }
   // F: days at the end with no new material; 1 for a 7-day runway, 2 for 14, 4 for 28 or more
   function finalDays(runway) { return Math.max(1, Math.min(4, Math.round(0.15 * runway))); }
+  // the day's phase by days left (dl): learn, final (review only), eve (short review) or exam. An evening exam (late) makes
+  // the exam day itself the short review day, so every phase moves one day later and the day before is a study day
+  function dayPhase(dl, F, late) { const e = dl + (late ? 1 : 0); return dl <= 0 ? 'exam' : e <= 1 ? 'eve' : e <= F ? 'final' : 'learn'; }
+  // learning days left, today included, and the last of them (the ready-by day) as days before the exam
+  function learnDays(dl, F, late) { return Math.max(0, dl - F + (late ? 1 : 0)); }
+  function readyGap(F, late) { return F + 1 - (late ? 1 : 0); }
+  // readiness for the ready-by day: the first-coverage minutes left per objective (an item shared by objectives is charged
+  // once), what that asks per learning day on top of review (newToday, the first-look minutes already done today, counts
+  // toward today's share, so the figure holds steady while you study), how far the daily cap falls short, and a day-by-day
+  // plan in path order at min(need, cap): an objective goes to the day its midpoint falls in; what falls past the ready-by
+  // day is the cut list, the lowest exam weight last
+  function readiness(core, st, leanSlides, covered, days, cap, rev, newToday, pace) {
+    const seen = { c: new Set(), q: new Set() }, rows = [];
+    for (const s of core.sections) for (const o of s.objs) { const m = newMinutes(core, st, leanSlides, covered, [o], seen, pace); if (m >= 0.05) rows.push({ code: o.code, sec: s.name, w: s.weight / s.objs.length, m }); }
+    const left = rows.reduce((a, r) => a + r.m, 0), n = Math.max(1, days), doneNew = Math.max(0, newToday || 0);
+    const need = (left + doneNew) / n + rev, per = Math.max(5, Math.min(cap, need) - rev);
+    const ends = []; let acc = 0; for (let k = 0; k < n; k++) { acc += k === 0 ? Math.max(0, per - doneNew) : per; ends.push(acc); }
+    const fill = units => {   // each unit goes to the day its midpoint falls in; past the last day is the cut list
+      const days = ends.map((_, k) => ({ k, m: 0, codes: [], secs: [] })), cut = []; let at = 0, k = 0;
+      for (const u of units) {
+        while (k < n && at + u.m / 2 > ends[k] + 1e-9) k++;
+        if (k >= n) { cut.push(u); continue; }
+        days[k].m += u.m; days[k].codes.push(...u.codes); days[k].secs.push(u.sec); at += u.m;
+      }
+      return { days, cut: { codes: cut.flatMap(u => u.codes), secs: cut.map(u => u.sec), m: cut.reduce((a, u) => a + u.m, 0), weight: cut.reduce((a, u) => a + u.w, 0) } };
+    };
+    // by objective, and by whole section (a section never splits across days)
+    const byObj = fill(rows.map(r => ({ codes: [r.code], sec: r.sec, m: r.m, w: r.w })));
+    const groups = []; for (const r of rows) { const g = groups[groups.length - 1]; if (g && g.sec === r.sec) { g.codes.push(r.code); g.m += r.m; g.w += r.w; } else groups.push({ sec: r.sec, codes: [r.code], m: r.m, w: r.w }); }
+    const bySec = fill(groups);
+    return { left, need, per, behind: Math.max(0, need - cap), plan: byObj.days, cut: byObj.cut, secDays: bySec.days, secCut: bySec.cut, ends, rows };
+  }
   // the review lane for today: missed or stale critical questions, due critical cards (lowest box, most overdue first);
   // anything answered or rated today waits for a later day, so a fresh miss is not re-asked before it is taught
   function reviewLane(core, st, t) {
@@ -1065,24 +1142,24 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   }
   // minutes still needed for first coverage: lean slides of uncovered lessons, critical cards and questions never recalled
   // seen carries items already charged across calls, so a card or question shared by objectives is paid once
-  function newMinutes(core, st, leanSlides, covered, objs, seen) {
-    const seenC = (seen && seen.c) || new Set(), seenQ = (seen && seen.q) || new Set(); let sec = 0;
+  function newMinutes(core, st, leanSlides, covered, objs, seen, pace) {
+    const S = pace || PLAN_SEC, seenC = (seen && seen.c) || new Set(), seenQ = (seen && seen.q) || new Set(); let sec = 0;
     for (const o of (objs || core.objs)) {
-      if (!covered(o.lessonId)) sec += PLAN_SEC.slide * (leanSlides[o.lessonId] || 0);
-      for (const id of o.cIds) if (!seenC.has(id)) { seenC.add(id); if (!(st.fr[id] != null && st.cards[id] && st.cards[id].box)) sec += PLAN_SEC.card; }
-      for (const id of o.qIds) if (!seenQ.has(id)) { seenQ.add(id); if (!(st.stats[id] && st.stats[id].last === 1)) sec += PLAN_SEC.q; }
+      if (!covered(o.lessonId)) sec += S.slide * (leanSlides[o.lessonId] || 0);
+      for (const id of o.cIds) if (!seenC.has(id)) { seenC.add(id); if (!(st.fr[id] != null && st.cards[id] && st.cards[id].box)) sec += S.card; }
+      for (const id of o.qIds) if (!seenQ.has(id)) { seenQ.add(id); if (!(st.stats[id] && st.stats[id].last === 1)) sec += S.q; }
     }
     return sec / 60;
   }
-  function goalMinutes(mNew, lane, newDays, cap) {
-    const rev = Math.min(cap / 2, (PLAN_SEC.cardRe * lane.cs.length + PLAN_SEC.qRe * lane.qs.length) / 60);
+  function goalMinutes(mNew, lane, newDays, cap, pace) {
+    const S = pace || PLAN_SEC, rev = Math.min(cap / 2, (S.cardRe * lane.cs.length + S.qRe * lane.qs.length) / 60);
     return { goal: Math.max(10, Math.min(cap, Math.round(mNew / Math.max(1, newDays) + rev))), rev, binds: Math.round(mNew / Math.max(1, newDays) + rev) > cap };
   }
   // what the pace buys: walk objectives in path order spending newDays x (cap - review) minutes
-  function forecast(core, st, leanSlides, covered, newDays, cap, rev) {
+  function forecast(core, st, leanSlides, covered, newDays, cap, rev, pace) {
     let budget = newDays * Math.max(5, cap - rev), reached = 0, wt = 0; const seen = { c: new Set(), q: new Set() };
     for (const s of core.sections) for (const o of s.objs) {
-      const m = newMinutes(core, st, leanSlides, covered, [o], seen);
+      const m = newMinutes(core, st, leanSlides, covered, [o], seen, pace);
       if (m > budget) return { reached, of: core.objs.length, weight: Math.round(wt) };
       budget -= m; reached++; wt += s.weight / s.objs.length;
     }
@@ -1127,6 +1204,12 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     return p;
   }
   let plan = loadPlan();
+  function SEC() { return paceOf(plan.pace); }   // your pace, or the realistic start until it is measured
+  // timing samples: a question from shown to checked, a card from shown to rated, a slide from shown to the next one;
+  // a sample is dropped when the app went to the background meanwhile or it falls outside the caps
+  let QT = {}, CT = {}; const PACE_LAST = { q: null, c: null };
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { QT.hid = true; CT.hid = true; if (typeof D !== 'undefined' && D) D.hid = true; } });
+  function paceSample(kind, at, hid, lo, hi) { if (!at || hid) return null; const e = (Date.now() - at) / 1000; if (e < lo || e > hi) return null; plan.pace = paceAdd(plan.pace || {}, kind, e); return e; }
   function savePlan() { if (plan.v === 1) save(PLAN_KEY, plan); }
   const CORE = buildCore(Q, CARDS, LESSONS, TOKENS);
   const CORE_BY_LESSON = Object.fromEntries(CORE.objs.map(o => [o.lessonId, o]));
@@ -1136,7 +1219,9 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   // one write per answer or rating: today's retrievals and credited minutes; for critical items the first-success day
   function planHit(kind, id, ok, repeat) {
     const t = todayKey(), d = dayRec(t), crit = kind === 'q' ? CORE.q.has(id) : CORE.c.has(id), before = d.r;
-    d.r++; d.m = (d.m || 0) + (kind === 'q' ? (repeat ? PLAN_SEC.qRe : PLAN_SEC.q) : (repeat ? PLAN_SEC.cardRe : PLAN_SEC.card)) / 60;
+    const S = SEC(), meas = PACE_LAST[kind === 'q' ? 'q' : 'c']; PACE_LAST.q = PACE_LAST.c = null;   // measured time when there is one
+    const sec = meas != null ? meas : kind === 'q' ? (repeat ? S.qRe : S.q) : (repeat ? S.cardRe : S.card);
+    d.r++; d.m = (d.m || 0) + sec / 60; if (!repeat) d.mn = (d.mn || 0) + sec / 60;   // mn: first looks only, the new material readiness counts
     if (crit) { if (ok === false) delete plan.fr[id]; else if (ok === true && plan.fr[id] == null) plan.fr[id] = t; if (kind === 'c' && ok === true) plan.lg[id] = t; }
     if (before < 10 && d.r >= 10) { plan.sd = (plan.sd || 0) + 1; plan.best = Math.max(plan.best || 0, runState(plan.days, t).run); }
     savePlan();
@@ -1280,7 +1365,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (s.k === 'title') {
       const q = (l.questionIds || []).filter(x => BY_ID[x]).length, c = (l.cardIds || []).filter(x => CARD_BY_ID[x]).length, words = l.sections.reduce((a, sec) => a + sec.blocks.reduce((b, x) => b + wc(x.text), 0), 0);
       h = '<div class="drun">' + esc(l.domain) + (d.weight ? ' · ' + d.weight + '% of exam' : ' · background') + '</div><h2>' + esc(l.title) + '</h2>' + (l.code !== 'X' ? '<p class="note">Objective ' + esc(l.code) + ': ' + esc(l.objective) + '</p>' : '') +
-        '<p class="dstats">' + D.slides.length + ' slides · about ' + (D.lean ? Math.max(1, Math.round(D.slides.length * PLAN_SEC.slide / 60)) : Math.max(3, Math.round(words / 220))) + ' min · ' + q + ' questions · ' + c + ' cards</p>' + (lessonRead[l.id] ? '<p class="note">You have read this lesson.</p>' : '') + trimNote(l.id, D.lean);
+        '<p class="dstats">' + D.slides.length + ' slides · about ' + (D.lean ? Math.max(1, Math.round(D.slides.length * SEC().slide / 60)) : Math.max(3, Math.round(words / 220))) + ' min · ' + q + ' questions · ' + c + ' cards</p>' + (lessonRead[l.id] ? '<p class="note">You have read this lesson.</p>' : '') + trimNote(l.id, D.lean);
     } else if (s.k === 'intro') h = '<div class="dkick">What this covers</div>' + T(s.text, true);
     else if (s.k === 'focus') h = '<div class="dkick">How the exam tests this</div><div class="dcallout">' + T(s.text, false) + '</div>' + cont();
     else if (s.k === 'warm') {
@@ -1326,7 +1411,17 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (!D) return;
     const prevMax = D.max;
     D.i = Math.max(0, Math.min(D.slides.length - 1, i)); D.max = Math.max(D.max, D.i);
-    if (D.lean && D.plan && D.max === prevMax + 1) { const d = dayRec(todayKey()); d.m = (d.m || 0) + PLAN_SEC.slide / 60; savePlan(); }
+    if (D.i !== D.shownI) {   // a new slide: the time on the previous one is a pace sample when it was one step forward
+      // key-point (lean) slides feed the pace the plan prices and count as new material while the lesson is uncovered; a
+      // full-lesson slide keeps its own pace (shown in Details) and counts as study time only
+      const fwd = D.max === prevMax + 1 && D.i === D.shownI + 1, e = fwd ? paceSample(D.lean ? 'slide' : 'slideFull', D.shownAt, D.hid, 2, 300) : null;
+      if (D.max === prevMax + 1 && (e != null || (D.lean && D.plan))) {
+        const d = dayRec(todayKey()), m = (e != null ? e : SEC().slide) / 60; d.m = (d.m || 0) + m;
+        if (D.lean && D.plan && !covered(D.id)) d.mn = (d.mn || 0) + m;
+      }
+      if (D.max === prevMax + 1) savePlan();
+      D.shownAt = Date.now(); D.shownI = D.i; D.hid = false;
+    }
     const s = D.slides[D.i], ch = chapterOf(D.i), n = D.slides.length;
     $('dslide').innerHTML = slideHtml(D.i); $('dslide').scrollTop = 0;
     const secCh = /^S(\d+)$/.exec(ch.ch);
@@ -1607,23 +1702,25 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   function planDates() {
     const t = todayKey(), ex = plan.exam ? dateKey(plan.exam) : null, dl = ex == null ? null : ex - t;
     const virtual = dl == null || dl < 0 || plan.out === 'pass';
-    const runway = virtual ? 28 : Math.max(1, dl, plan.runway || 0);
-    return { t, ex, dl, after: dl != null && dl < 0 && !plan.out, virtual, runway, daysLeft: virtual ? 28 : dl, F: finalDays(runway) };
+    const runway = virtual ? 28 : Math.max(1, dl, plan.runway || 0), F = finalDays(runway), late = !virtual && !!plan.late;
+    const daysLeft = virtual ? 28 : dl;
+    return { t, ex, dl, after: dl != null && dl < 0 && !plan.out, virtual, runway, daysLeft, F, late, phase: virtual ? 'learn' : dayPhase(dl, F, late), learn: learnDays(daysLeft, F, late), readyBy: virtual ? null : ex - readyGap(F, late) };
   }
   // the goal is pinned at the first open of the day, so it never shrinks while you work
   // the final days are review only, unless under half the critical items are covered with more than a day left
   function shakyOf(lid) { return !!(plan.shaky[lid] && Object.keys(plan.shaky[lid]).length); }
   function inFinal(P, R) {
-    if (P.virtual || P.dl > P.F) return false;
-    if (P.dl <= 1) return true;
+    if (P.virtual || P.phase === 'learn') return false;
+    if (P.phase !== 'final') return true;
     const n = CORE.q.size + CORE.c.size, got = [...CORE.q].filter(id => R.sq(id) > 0).length + [...CORE.c].filter(id => R.sc(id) > 0).length;
     return got / n >= 0.5;
   }
   function todayGoal(P, st, lane, R) {
     const d = dayRec(P.t);
     if (d.g == null) {
-      const finalStretch = inFinal(P, R), gm = goalMinutes(finalStretch ? 0 : newMinutes(CORE, st, leanCounts(), covered), lane, Math.max(1, P.daysLeft - P.F), plan.cap);
-      d.g = !P.virtual && P.dl === 0 ? 5 : !P.virtual && P.dl === 1 ? Math.min(30, Math.max(10, Math.round(gm.rev))) : gm.goal;
+      const finalStretch = inFinal(P, R), gm = goalMinutes(finalStretch ? 0 : newMinutes(CORE, st, leanCounts(), covered, null, null, SEC()), lane, Math.max(1, P.learn), plan.cap, SEC());
+      // an evening exam day: review first, then the last look, up to an hour
+      d.g = P.phase === 'exam' ? (P.late ? Math.min(60, Math.max(15, Math.round(gm.rev) + 8)) : 5) : P.phase === 'eve' ? Math.min(30, Math.max(10, Math.round(gm.rev))) : gm.goal;
       savePlan();
     }
     return d.g;
@@ -1635,60 +1732,67 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const open = o => !done.has(o.code) && (shaky(o) || (R.node[o.code] < 0.8 && !(covered(o.lessonId) && o.qIds.every(id => R.sq(id) > 0) && o.cIds.every(id => R.sc(id) > 0))));
     const o = CORE.objs.find(x => shaky(x) && open(x)) || CORE.objs.find(open);
     if (!o) return null;
+    d.tgt = pinFor(o, P, R); savePlan();
+    return d.tgt;
+  }
+  // the quick path for one objective: a Check of up to 5 critical questions, then key points on a miss, cards, questions
+  function pinFor(o, P, R) {
+    const shaky = x => shakyOf(x.lessonId);
     // objectives share questions, so anything answered today (in another objective's step) is not asked again; when
     // nothing is left to ask, today's answers decide whether the key points are needed
     const todayQ = id => stats[id] && dayKey(stats[id].t) === P.t;
     const askable = o.qIds.filter(id => !todayQ(id)), need = Math.min(3, o.qIds.length);
     const asked = askable.length >= need ? askable.sort((a, b) => (stats[a] ? 1 : 0) - (stats[b] ? 1 : 0) || R.sq(a) - R.sq(b)).slice(0, 5) : [];
     let step = 'check';
-    if (!asked.length) { const miss = o.qIds.some(id => stats[id] && stats[id].last === 0); step = miss && (!covered(o.lessonId) || shaky(o)) ? 'read' : 'cards'; }
-    d.tgt = { node: o.code, lid: o.lessonId, step, asked }; savePlan();
-    return d.tgt;
+    if (!asked.length) { const miss = o.qIds.some(id => stats[id] && stats[id].last === 0); step = !covered(o.lessonId) || (miss && shaky(o)) ? 'read' : 'cards'; }
+    return { node: o.code, lid: o.lessonId, step, asked };
   }
   function bonusStep(P) {
-    if (P && !P.virtual && P.dl <= 1) return P.dl === 0 ? { k: 'done', label: 'Exam day', sub: 'Nothing left to review. Good luck.' } : { k: 'done', label: 'Done for tonight', sub: 'Nothing new tonight. Sleep well.' };
+    if (P && (P.phase === 'exam' || P.phase === 'eve')) return P.phase === 'exam' ? { k: 'done', label: 'Exam day', sub: P.late ? 'Review done. Good luck tonight.' : 'Nothing left to review. Good luck.' } : { k: 'done', label: 'Done for tonight', sub: 'Nothing new tonight. Sleep well.' };
     const ids = [...CORE.q].filter(id => stats[id] && stats[id].last === 0);
     const pool = ids.length ? ids : weakIds();
     return pool.length ? { k: 'bonus', tag: 'bonus', ids: shuffle(pool).slice(0, 10), label: 'Today done', sub: 'Bonus: ' + Math.min(10, pool.length) + ' weak questions' } : { k: 'done', label: 'Today done', sub: 'Come back tomorrow' };
   }
   function nextStep() {
     const P = planDates(), t = P.t, d = dayRec(t), st = planState(), R = rollups(CORE, st), mins = n => Math.max(1, Math.round(n));
+    const manual = !!(d.tgt && d.tgt.manual && d.tgt.step !== 'done' && Date.now() - (d.tgt.at || 0) < 2 * 3600e3);   // a topic tapped on today's checklist runs first, for two hours at most
     const saved = load(SESSION_KEY, null);
-    if (saved && !saved.done && saved.mode !== 'exam' && dayKey(saved.startedAt) === t && answered(saved)) return { k: 'resume', label: 'Resume', sub: (MODE_NAME[saved.mode] || 'Quiz') + ', ' + answered(saved) + ' of ' + saved.ids.length + ' answered' };
+    if (!manual && saved && !saved.done && saved.mode !== 'exam' && dayKey(saved.startedAt) === t && answered(saved)) return { k: 'resume', label: 'Resume', sub: (MODE_NAME[saved.mode] || 'Quiz') + ', ' + answered(saved) + ' of ' + saved.ids.length + ' answered' };
     const mid = Object.entries(deckStore.pos).map(([key, p]) => ({ id: key.replace(/~lean$/, ''), lean: /~lean$/.test(key), p }))
       .filter(x => CORE_BY_LESSON[x.id] && !lessonRead[x.id] && !(x.lean && plan.cov[x.id]) && x.p.i > 0 && x.p.i < x.p.n - 1 && x.p.t && dayKey(x.p.t) >= t - 2).sort((a, b) => b.p.t - a.p.t)[0];
-    if (mid) { const pn = posNow(mid.id, mid.lean); return { k: 'lesson', id: mid.id, lean: mid.lean, label: 'Finish reading', sub: CORE_BY_LESSON[mid.id].code + ', slide ' + (pn.i + 1) + ' of ' + pn.n }; }
+    if (!manual && mid) { const pn = posNow(mid.id, mid.lean); return { k: 'lesson', id: mid.id, lean: mid.lean, label: 'Finish reading', sub: CORE_BY_LESSON[mid.id].code + ', slide ' + (pn.i + 1) + ' of ' + pn.n }; }
     const seen = new Set(d.seen || []), lane = reviewLane(CORE, st, t), answeredToday = id => stats[id] && dayKey(stats[id].t) === t;
     // questions of objectives flagged shaky go to the front of the lane, the final pass and the last look
     const shakyQ = CORE.objs.filter(o => shakyOf(o.lessonId)).flatMap(o => o.qIds), isShaky = new Set(shakyQ);
     const shakyC = CORE.objs.filter(o => shakyOf(o.lessonId)).flatMap(o => o.cIds).filter(id => !(cardState[id] && cardLastDay(cardState[id], BOX_DAYS) === t)).slice(0, 10);
     lane.qs = [...new Set(shakyQ.filter(id => !answeredToday(id)).slice(0, 8).concat(lane.qs))].filter(id => !seen.has(id)); lane.cs = [...new Set(shakyC.concat(lane.cs))].filter(id => !seen.has(id));
     const g = todayGoal(P, st, lane, R);
-    if (!P.virtual && P.dl === 0) {
+    const laneStep = () => lane.qs.length ? { k: 'quiz', tag: 'lane', ids: lane.qs.slice(0, 10), label: 'Review', sub: Math.min(10, lane.qs.length) + ' questions to revisit, ' + mins(Math.min(10, lane.qs.length) * 0.75) + ' min' }
+      : { k: 'cards', tag: 'lane', ids: lane.cs.slice(0, 20), label: 'Review', sub: Math.min(20, lane.cs.length) + ' cards due, ' + mins(Math.min(20, lane.cs.length) * 0.1) + ' min' };
+    if (P.phase === 'exam') {
       if ((d.m || 0) >= g) return bonusStep(P);
+      if (P.late && (lane.qs.length || lane.cs.length) && (d.m || 0) < g - 8) return laneStep();   // an evening exam: review, then the last look
       const ids = [...CORE.q].filter(id => stats[id] && !seen.has(id)).sort((a, b) => (isShaky.has(a) ? 0 : 1) - (isShaky.has(b) ? 0 : 1) || R.sq(a) - R.sq(b)).slice(0, 10);
       return ids.length ? { k: 'quiz', tag: 'last', ids, label: 'Last look', sub: ids.length + ' shakiest questions, 5 min' } : { k: 'done', label: 'Exam day', sub: 'Nothing left to review. Good luck.' };
     }
-    if ((d.m || 0) >= g) return bonusStep(P);
-    const laneStep = () => lane.qs.length ? { k: 'quiz', tag: 'lane', ids: lane.qs.slice(0, 10), label: 'Review', sub: Math.min(10, lane.qs.length) + ' questions to revisit, ' + mins(Math.min(10, lane.qs.length) * 0.75) + ' min' }
-      : { k: 'cards', tag: 'lane', ids: lane.cs.slice(0, 20), label: 'Review', sub: Math.min(20, lane.cs.length) + ' cards due, ' + mins(Math.min(20, lane.cs.length) * 0.1) + ' min' };
+    if (!manual && (d.m || 0) >= g) return bonusStep(P);
     if (inFinal(P, R)) {
       if (lane.qs.length || lane.cs.length) return laneStep();
       const ids = [];
       for (const o of CORE.objs.slice().sort((a, b) => (shakyOf(a.lessonId) ? 0 : 1) - (shakyOf(b.lessonId) ? 0 : 1) || R.node[a.code] - R.node[b.code])) for (const id of o.qIds) if (ids.length < 10 && ids.indexOf(id) < 0 && !seen.has(id) && !(stats[id] && dayKey(stats[id].t) === t)) ids.push(id);
       return ids.length ? { k: 'quiz', tag: 'final', ids, label: 'Final pass', sub: 'weakest topics, ' + mins(ids.length * 0.75) + ' min' } : bonusStep(P);
     }
-    if (lane.qs.length + lane.cs.length >= 5) return laneStep();
+    if (!manual && lane.qs.length + lane.cs.length >= 5) return laneStep();
     for (let guard = 0; guard < 4 * CORE.objs.length; guard++) {
       const tg = d.tgt && d.tgt.step !== 'done' ? d.tgt : pinNode(P, R);
       if (!tg) return bonusStep(P);
       const o = CORE_BY_LESSON[tg.lid], name = o.code + ' ' + o.title;
-      if (tg.step === 'check') return { k: 'quiz', tag: 'check', ids: tg.asked, label: 'Check', sub: name + ', ' + mins(tg.asked.length * PLAN_SEC.q / 60) + ' min' };
+      if (tg.step === 'check') return { k: 'quiz', tag: 'check', ids: tg.asked, label: 'Check', sub: name + ', ' + mins(tg.asked.length * SEC().q / 60) + ' min' };
       const readToday = (lessonRead[tg.lid] && dayKey(lessonRead[tg.lid]) === t) || plan.cov[tg.lid] === t;
       if (tg.step === 'read' && ((covered(tg.lid) && !shakyOf(tg.lid)) || readToday)) { tg.step = 'cards'; savePlan(); }   // read meanwhile
-      if (tg.step === 'read') { const n = deckCount(o.lessonId, true); return { k: 'read', id: o.lessonId, label: 'Key points', sub: name + ', ' + n + ' slides, ' + mins(n * PLAN_SEC.slide / 60) + ' min' }; }
-      if (tg.step === 'cards') { const ids = o.cIds.filter(id => plan.fr[id] == null && !(cardState[id] && cardLastDay(cardState[id], BOX_DAYS) === t)).slice(0, 20); if (ids.length) return { k: 'cards', tag: 'cards', ids, label: 'Cards', sub: name + ', ' + ids.length + ' cards, ' + mins(ids.length * PLAN_SEC.card / 60) + ' min' }; tg.step = 'q'; }
-      if (tg.step === 'q') { const ids = o.qIds.filter(id => tg.asked.indexOf(id) < 0 && R.sq(id) === 0 && !answeredToday(id)).slice(0, 10); if (ids.length) return { k: 'quiz', tag: 'q', ids, label: 'Questions', sub: name + ', ' + ids.length + ' questions, ' + mins(ids.length * PLAN_SEC.q / 60) + ' min' }; tg.step = 'done'; d.nodes = (d.nodes || []).concat(tg.node); savePlan(); }
+      if (tg.step === 'read') { const n = deckCount(o.lessonId, true); return { k: 'read', id: o.lessonId, label: 'Key points', sub: name + ', ' + n + ' slides, ' + mins(n * SEC().slide / 60) + ' min' }; }
+      if (tg.step === 'cards') { const ids = o.cIds.filter(id => plan.fr[id] == null && !(cardState[id] && cardLastDay(cardState[id], BOX_DAYS) === t)).slice(0, 20); if (ids.length) return { k: 'cards', tag: 'cards', ids, label: 'Cards', sub: name + ', ' + ids.length + ' cards, ' + mins(ids.length * SEC().card / 60) + ' min' }; tg.step = 'q'; }
+      if (tg.step === 'q') { const ids = o.qIds.filter(id => tg.asked.indexOf(id) < 0 && R.sq(id) === 0 && !answeredToday(id)).slice(0, 10); if (ids.length) return { k: 'quiz', tag: 'q', ids, label: 'Questions', sub: name + ', ' + ids.length + ' questions, ' + mins(ids.length * SEC().q / 60) + ' min' }; tg.step = 'done'; d.nodes = (d.nodes || []).concat(tg.node); savePlan(); }
     }
     return bonusStep(P);
   }
@@ -1726,6 +1830,112 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   function dateChips(t, cur) {
     return '<label class="tchip">Pick a date<input type="date" id="tpick" aria-label="Pick the exam date" min="' + keyDate(t + 1) + '" max="' + keyDate(t + 400) + '"' + (cur ? ' value="' + keyDate(cur) + '"' : '') + '></label>' + [1, 2, 4, 6].map(w => '<button class="tchip' + (cur === t + 7 * w ? ' on' : '') + '" data-set="' + (t + 7 * w) + '">' + w + ' wk ' + fmtDay(t + 7 * w) + '</button>').join('');
   }
+  // ---- readiness: how far first coverage is from the ready-by day (the last study day before the exam) ----
+  const CAPS = [45, 60, 90, 120, 180, 240];
+  function fmtMin(m) { m = Math.max(0, Math.round(m)); const h = Math.floor(m / 60), r = m % 60; return h ? h + ' h' + (r ? ' ' + r + ' min' : '') : m + ' min'; }
+  function fmtWday(k) { return new Date(k * 864e5).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }); }
+  // 4.1, 4.2, 4.3 and 4.4 read as "4.1 to 4.4"; runs never cross a section
+  function codeRuns(codes) {
+    const out = []; let a = null, b = null;
+    const flush = () => { if (a) out.push(a === b ? a : a + ' to ' + b); };
+    for (const c of codes) { const [s, n] = c.split('.'); if (b && b.split('.')[0] === s && +b.split('.')[1] + 1 === +n) { b = c; continue; } flush(); a = b = c; }
+    flush(); return out.join(', ');
+  }
+  function readyNow(P, st) {
+    const S = SEC(), lane = reviewLane(CORE, st, P.t), rev = Math.min(plan.cap / 2, (S.cardRe * lane.cs.length + S.qRe * lane.qs.length) / 60);
+    return Object.assign(readiness(CORE, st, leanCounts(), covered, Math.max(1, P.learn), plan.cap, rev, dayRec(P.t).mn || 0, S), { rev });
+  }
+  // the exam time the plan assumes, on the card itself: one tap switches it
+  function lateBtn() { return '<button class="ghost small" data-late="' + (plan.late ? '0' : '1') + '" aria-label="Exam time: ' + (plan.late ? 'evening' : 'morning') + '. Tap to switch to ' + (plan.late ? 'morning' : 'evening') + '">' + (plan.late ? 'Evening exam' : 'Morning exam') + ' · switch</button>'; }
+  // an objective is done once every core item of it is: key points read or its Check passed, critical questions right, cards Good
+  function objDone(o, R) { return covered(o.lessonId) && o.qIds.every(id => R.sq(id) > 0) && o.cIds.every(id => R.sc(id) > 0); }
+  function objStarted(o, R) { return covered(o.lessonId) || o.qIds.some(id => R.sq(id) > 0) || o.cIds.some(id => R.sc(id) > 0); }
+  function objMin(o, st) { return newMinutes(CORE, st, leanCounts(), covered, [o], null, SEC()); }
+  function secLabel(name) { const n = ((SECTIONS.find(y => y.name === name) || {}).num || '').replace(/\.0$/, ''); return (n ? n + ' ' : '') + name; }
+  // today's topics: the objectives of the sections planned for today, pinned at the first look of the day (a new date, exam
+  // time or cap plans the day again), so finished ones stay on the list and turn green
+  function todayList(P, r, d) {
+    const key = P.ex + ':' + (plan.late ? 1 : 0) + ':' + plan.cap;
+    if (!Array.isArray(d.list) || d.listKey !== key) {
+      const R = rollups(CORE, planState()), keep = (Array.isArray(d.list) ? d.list : []).filter(c => { const o = CORE.objs.find(x => x.code === c); return o && (objDone(o, R) || objStarted(o, R)); });
+      d.list = keep.concat(((r.secDays && r.secDays[0]) || { codes: [] }).codes.filter(c => keep.indexOf(c) < 0)); d.listKey = key; savePlan();
+    }
+    return d.list.map(c => CORE.objs.find(o => o.code === c)).filter(Boolean);
+  }
+  function topicRow(o, R, st, extra, mm) {
+    const done = objDone(o, R), part = !done && objStarted(o, R), mins = mm != null ? mm : objMin(o, st);
+    return '<li><button class="trow2' + (done ? ' done' : part ? ' part' : '') + '" data-obj="' + esc(o.code) + '" aria-label="' + esc(o.code + ' ' + o.title) + (done ? ', done' : part ? ', started' : '') + '">' +
+      '<i aria-hidden="true">' + (done ? '✓' : part ? '◐' : extra ? '+' : '○') + '</i><span class="c">' + esc(o.code) + '</span><span class="t">' + (extra ? esc(extra) + ' ' : '') + esc(o.title) + '</span><span class="m">' + (done ? 'done' : (mins < 1 ? '&lt;1 min' : fmtMin(mins))) + '</span></button></li>';
+  }
+  // the Today card while you are still learning: today's checklist, one line per later day, and a short warning when the cap
+  // cannot fit the rest; on review-only days, two plain lines
+  function readyLines(P, st, R, d) {
+    const r = readyNow(P, st), btns = '<div class="tbtns"><button class="ghost small" data-ready="1">Details</button>' + lateBtn() + '</div>';
+    if (P.phase !== 'learn' && inFinal(P, R)) {
+      const topics = CORE.objs.filter(o => !objDone(o, R)).length;
+      return '<div class="tplan"><div class="tph"><b>Review day</b><span>ready-by day was ' + fmtWday(P.readyBy).split(',')[0] + '</span></div><div class="tpsub">' +
+        (r.left >= 1 ? topics + ' topics not finished, about ' + fmtMin(r.left) + '. Continue runs your review first.' : 'Every core item covered once. Continue runs your review.') + '</div>' + btns + '</div>';
+    }
+    const rowM = {}; for (const x of r.rows) rowM[x.code] = x.m;   // path-order minutes: an item shared by objectives counts once
+    const list = todayList(P, r, d), rows = list.map(o => ({ o, done: objDone(o, R), m: rowM[o.code] || 0 })), nDone = rows.filter(x => x.done).length;
+    const leftToday = rows.reduce((a, x) => a + (x.done ? 0 : x.m), 0);
+    let h = '<div class="tplan"><div class="tph"><b>Today · ' + fmtWday(P.t).split(',')[0] + '</b><span>' + (rows.length ? nDone + ' of ' + rows.length + ' done' : 'nothing planned') + '</span></div>' +
+      '<div class="tpbar" role="progressbar" aria-valuemin="0" aria-valuemax="' + rows.length + '" aria-valuenow="' + nDone + '"><b style="width:' + (rows.length ? Math.round(100 * nDone / rows.length) : 0) + '%"></b></div>' +
+      '<div class="tpsub">' + (rows.length && nDone < rows.length ? 'About ' + fmtMin(leftToday) + ' left today · ' : '') + 'ready by ' + fmtWday(P.readyBy).split(',')[0] + '</div>';
+    h += '<ul class="tlist">' + rows.map(x => topicRow(x.o, R, st, null, x.m)).join('');
+    if (nDone === rows.length) { const nx = CORE.objs.find(o => list.indexOf(o) < 0 && !objDone(o, R)); if (nx) h += topicRow(nx, R, st, rows.length ? 'Get ahead:' : 'Start:', rowM[nx.code] || 0); }
+    h += '</ul><div class="tdays">';
+    for (const x of (r.secDays || []).slice(1)) h += '<div><b>' + fmtWday(P.t + x.k).split(',')[0] + '</b> ' + (x.secs.length ? esc(x.secs.map(secLabel).join(' · ')) + ' · ' + fmtMin(x.m) : 'review') + '</div>';
+    for (let k = Math.max(1, P.learn); k <= P.dl; k++) { const ph = dayPhase(P.dl - k, P.F, P.late); h += '<div><b>' + fmtWday(P.t + k).split(',')[0] + '</b> ' + (ph === 'exam' ? (P.late ? 'review, then a last look before the exam' : 'exam: a last look') : ph === 'eve' ? 'short review, nothing new' : 'review only') + '</div>'; }
+    h += '</div>';
+    if (r.secCut.secs.length) { const up = CAPS.find(c => c >= r.need) || CAPS[CAPS.length - 1];
+      h += '<div class="tbehind">At ' + fmtMin(plan.cap) + ' a day, ' + esc(r.secCut.secs.map(secLabel).join(', ')) + ' won\'t fit by ' + fmtWday(P.readyBy).split(',')[0] + ' (' + Math.round(r.secCut.weight) + '% of the exam).</div>' +
+        (up > plan.cap ? '<div><button class="tchip" data-rcap="' + up + '">Raise the cap to ' + fmtMin(up) + ' a day</button></div>' : ''); }
+    return h + btns + '</div>';
+  }
+  // a tapped topic runs its quick path at once (a finished one opens its lesson to look back)
+  function startTopic(code) {
+    const o = CORE.objs.find(x => x.code === code); if (!o) return;
+    const P = planDates(), R = rollups(CORE, planState());
+    if (objDone(o, R)) { openLesson(o.lessonId); return; }
+    const d = dayRec(P.t); d.tgt = Object.assign(pinFor(o, P, R), { manual: 1, at: Date.now() }); savePlan();
+    const step = nextStep(), ids = step.ids || [];
+    const mine = (step.k === 'read' && step.id === o.lessonId) || (step.k === 'quiz' && ids.length && ids.every(id => o.qIds.indexOf(id) >= 0)) || (step.k === 'cards' && ids.length && ids.every(id => o.cIds.indexOf(id) >= 0));
+    if (mine) runStep(step); else { d.tgt = null; savePlan(); openLesson(o.lessonId); }   // nothing left to ask today: read the lesson
+  }
+  function renderReady() {
+    const P = planDates(); if (P.virtual) { closeReady(); return; }
+    const st = planState(), R = rollups(CORE, st), r = readyNow(P, st), t = P.t, S = SEC();
+    const qL = [...CORE.q].filter(id => R.sq(id) === 0).length, cL = [...CORE.c].filter(id => R.sc(id) === 0).length, topics = CORE.objs.filter(o => !objDone(o, R)).length;
+    const up = CAPS.find(c => c >= r.need) || CAPS[CAPS.length - 1];
+    const teaching = P.phase === 'learn' || !inFinal(P, R);
+    let h = '<div class="actions"><strong>Plan to ' + fmtWday(P.readyBy) + '</strong><div class="spacer"></div><button class="ghost small" id="rdClose">Close</button></div>' +
+      '<p class="note">' + (plan.late ? 'Evening exam' : 'Morning exam') + ' on ' + fmtWday(P.ex) + ', so ' + fmtWday(P.readyBy) + ' is the last study day. ' + lateBtn() + '</p>' +
+      '<p class="note">A topic is done when every core item of it is: its key points read or its Check passed, its critical questions answered right and its critical cards rated Good. Not a pass prediction.</p>';
+    if (teaching) {
+      h += '<p>Left: <b>' + fmtMin(r.left) + '</b> (' + topics + ' topics, ' + qL + ' questions, ' + cL + ' cards). That is <b>' + fmtMin(r.need) + ' a day</b> for ' + Math.max(1, P.learn) + ' study day' + (Math.max(1, P.learn) === 1 ? '' : 's') + ', review included. Your cap: ' + fmtMin(plan.cap) + ' a day.</p>';
+      if (r.behind >= 1) h += '<p class="tbehind">Short by ' + fmtMin(r.behind) + ' a day at your cap.</p>' + (up > plan.cap ? '<div><button class="tchip" data-rcap="' + up + '">Raise the cap to ' + fmtMin(up) + '</button></div>' : '');
+      h += '<h3 class="bkhead">Day by day, whole sections</h3><ul class="rdays">' + r.secDays.map(x => '<li><b>' + fmtWday(t + x.k) + (x.k === 0 ? ' (today)' : '') + '</b><span>' + (x.secs.length ? fmtMin(x.m) : 'review') + '</span><div>' + (x.secs.length ? esc(x.secs.map(secLabel).join(' · ')) : 'Nothing new fits; review due items') + '</div></li>').join('');
+    } else h += '<p>The ready-by day has passed, so the plan is review only. ' + (r.left >= 1 ? 'Not finished: ' + topics + ' topics, ' + qL + ' questions, ' + cL + ' cards, about ' + fmtMin(r.left) + '.' : 'Every core item is covered once.') + '</p><h3 class="bkhead">Days left</h3><ul class="rdays">';
+    for (let k = teaching ? Math.max(1, P.learn) : 0; k <= P.dl; k++) {
+      const ph = dayPhase(P.dl - k, P.F, P.late);
+      h += '<li><b>' + fmtWday(t + k) + (k === 0 ? ' (today)' : '') + '</b><span>' + (ph === 'exam' ? 'exam' : 'review') + '</span><div>' + (ph === 'exam' ? (P.late ? 'Review due items, then a last look at your shakiest questions before the exam' : 'A last look at your shakiest questions') : ph === 'eve' ? 'Up to 30 minutes of review, nothing new' : 'Review only: missed and due items, then your weakest topics') + '</div></li>';
+    }
+    h += '</ul>';
+    if (teaching && r.secCut.secs.length) h += '<p class="tbehind">Not reached by ' + fmtWday(P.readyBy) + ' at your cap: ' + esc(r.secCut.secs.map(secLabel).join(', ')) + ' (' + Math.round(r.secCut.weight) + '% of the exam). Raise the cap, or leave these for last.</p>';
+    const bySec = {}; for (const x of r.rows) bySec[x.sec] = (bySec[x.sec] || 0) + x.m;
+    const pv = plan.pace || {}, measured = k => (pv[k] && pv[k].n >= 3);
+    h += '<h3 class="bkhead">By section</h3><table class="rdsec">' + CORE.sections.map(s => { const sn = ((SECTIONS.find(y => y.name === s.name) || {}).num || '').replace(/\.0$/, ''); return '<tr><td>' + esc(sn) + '</td><td>' + esc(s.name) + '</td><td>' + s.weight + '%</td><td>' + Math.round(100 * R.sec[s.name]) + '% recall</td><td>' + (bySec[s.name] ? fmtMin(bySec[s.name]) + ' left' : 'covered') + '</td></tr>'; }).join('') + '</table>' +
+      '<p class="note">Times use your pace: ' + Math.round(S.slide) + ' s a key-point slide' + (measured('slide') ? '' : ' (a starting guess)') + ', ' + Math.round(S.card) + ' s a card' + (measured('card') ? '' : ' (a starting guess)') + ', ' + Math.round(S.q) + ' s a question' + (measured('q') ? '' : ' (a starting guess)') + '. The app times your slides, cards and questions as you go and updates these' + (pv.slideFull && pv.slideFull.n >= 3 ? '; full lessons run about ' + Math.round(pv.slideFull.s / pv.slideFull.n) + ' s a slide' : '') + '. A topic counts its short key points (about 25 slides), not the full lesson, and a Check you pass skips them.</p>';
+    $('rdSheet').innerHTML = h;
+  }
+  let rdOpener = null;
+  function openReady(btn) { rdOpener = btn || document.activeElement; renderReady(); $('rdSheet').hidden = false; $('rdScrim').hidden = false; document.body.classList.add('sheet-open'); document.querySelector('.wrap').setAttribute('inert', ''); const c = $('rdClose'); if (c) c.focus(); }
+  function closeReady() {
+    $('rdSheet').hidden = true; $('rdScrim').hidden = true; document.body.classList.remove('sheet-open'); document.querySelector('.wrap').removeAttribute('inert');
+    if (!rdOpener || rdOpener === document.body || !document.contains(rdOpener)) rdOpener = document.querySelector('#tline [data-ready]');   // Home re-rendered while the sheet was open
+    if (rdOpener && rdOpener.focus) try { rdOpener.focus(); } catch (e) {}
+  }
   function renderToday() {
     const P = planDates(), t = P.t, st = planState(), R = rollups(CORE, st), d = dayRec(t), rs = runState(plan.days, t);
     let row = '';
@@ -1738,8 +1948,9 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     }
     if (plan.sd) row += '<span class="trun">' + plan.sd + ' study day' + (plan.sd === 1 ? '' : 's') + (rs.run >= 3 ? ' · ' + rs.run + ' in a row' : '') + '</span>';
     $('tdate').innerHTML = row;
-    $('tmore').innerHTML = (plan.exam ? '<span class="tq">Move the date</span>' + dateChips(t, P.ex) + '<button class="ghost small" data-clear="1">Clear date</button>' : '<span class="tq">Exam date</span>' + dateChips(t, null)) +
-      '<span class="tq">Daily cap</span>' + [45, 60, 90].map(m => '<button class="tchip' + (plan.cap === m ? ' on' : '') + '" data-cap="' + m + '">' + m + ' min</button>').join('');
+    $('tmore').innerHTML = (plan.exam ? '<span class="tq">Move the date</span>' + dateChips(t, P.ex) + '<button class="ghost small" data-clear="1">Clear date</button>' +
+      '<span class="tq">Exam time</span>' + [['0', 'Morning'], ['1', 'Evening']].map(([v, n]) => '<button class="tchip' + (!!plan.late === (v === '1') ? ' on' : '') + '" data-late="' + v + '">' + n + '</button>').join('') : '<span class="tq">Exam date</span>' + dateChips(t, null)) +
+      '<span class="tq">Daily cap</span>' + CAPS.map(m => '<button class="tchip' + (plan.cap === m ? ' on' : '') + '" data-cap="' + m + '">' + fmtMin(m) + '</button>').join('');
     const step = nextStep(); TODAY_STEP = step;
     $('tgoLabel').textContent = step.k === 'resume' || step.k === 'lesson' || step.k === 'done' || step.k === 'bonus' ? step.label : 'Continue: ' + step.label.toLowerCase();
     $('tgoSub').textContent = step.sub || '';
@@ -1752,10 +1963,11 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     let line = '';
     if (P.after) line = '<span>' + fmtDay(P.ex) + ' has passed. How did it go?</span><button class="ghost small" data-out="pass">Passed</button><button class="ghost small" data-out="retake">Retake</button><button class="ghost small" data-out="later">Not yet</button>';
     else if (!storageOK) line = 'Progress is not saved in this window.';
+    else if (!P.virtual) line = readyLines(P, st, R, d);
     else if (rs.last != null && t - rs.last >= 3 && !rs.today) line = 'Welcome back. ' + (P.virtual ? '' : P.daysLeft + ' days left, ') + left + ' items to cover.';
     else if (!inFinal(P, R)) {
-      const lane = reviewLane(CORE, st, t), newDays = Math.max(1, P.daysLeft - P.F), mNew = newMinutes(CORE, st, leanCounts(), covered), gm = goalMinutes(mNew, lane, newDays, plan.cap);
-      if (gm.binds) { const f = forecast(CORE, st, leanCounts(), covered, newDays, plan.cap, gm.rev); line = 'At this pace: ' + f.reached + ' of ' + f.of + ' topics, ' + f.weight + '% of the exam weight, by ' + fmtDay(P.virtual ? t + 28 : P.ex) + '.'; }
+      const lane = reviewLane(CORE, st, t), newDays = Math.max(1, P.daysLeft - P.F), mNew = newMinutes(CORE, st, leanCounts(), covered, null, null, SEC()), gm = goalMinutes(mNew, lane, newDays, plan.cap, SEC());
+      if (gm.binds) { const f = forecast(CORE, st, leanCounts(), covered, newDays, plan.cap, gm.rev, SEC()); line = 'At this pace: ' + f.reached + ' of ' + f.of + ' topics, ' + f.weight + '% of the exam weight, by ' + fmtDay(P.virtual ? t + 28 : P.ex) + '.'; }
     }
     $('tline').innerHTML = line; $('tline').hidden = !line;
   }
@@ -1767,11 +1979,25 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (b.dataset.set) setExam(Number(b.dataset.set));
     else if (b.dataset.more) { $('tmore').hidden = !$('tmore').hidden; renderToday(); }
     else if (b.dataset.cap) { plan.cap = Number(b.dataset.cap); delete dayRec(todayKey()).g; savePlan(); renderHome(); }
+    else if (b.dataset.late) { plan.late = b.dataset.late === '1'; delete dayRec(todayKey()).g; savePlan(); renderHome(); }
+    else if (b.dataset.ready) openReady(b);
+    else if (b.dataset.obj) startTopic(b.dataset.obj);
+    else if (b.dataset.rcap) { plan.cap = Number(b.dataset.rcap); delete dayRec(todayKey()).g; savePlan(); renderHome(); }
     else if (b.dataset.clear) { plan.exam = null; plan.set = null; plan.runway = null; plan.out = null; plan.opens = 0; delete dayRec(todayKey()).g; savePlan(); $('tmore').hidden = true; renderHome(); }
     else if (b.dataset.out === 'pass') { plan.out = 'pass'; savePlan(); renderHome(); }
     else if (b.dataset.out === 'retake' || b.dataset.out === 'later') { if (b.dataset.out === 'retake') plan.attempts.push({ exam: plan.exam, out: 'fail' }); plan.exam = null; plan.out = null; plan.opens = 0; savePlan(); $('tmore').hidden = true; renderHome(); }
   });
   $('today').addEventListener('change', e => { if (e.target.id === 'tpick' && e.target.value) setExam(dateKey(e.target.value)); });
+  $('rdSheet').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'rdClose') closeReady();
+    else if (b.dataset.rcap || b.dataset.late) {
+      if (b.dataset.rcap) plan.cap = Number(b.dataset.rcap); else plan.late = b.dataset.late === '1';
+      delete dayRec(todayKey()).g; savePlan(); renderHome(); renderReady(); const c = $('rdClose'); if (c) c.focus();
+    }
+  });
+  $('rdScrim').addEventListener('click', closeReady);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('rdSheet').hidden) closeReady(); });
   const openSection = name => { openSecs.add(name); renderBlueprint(); const el = [...document.querySelectorAll('#bp .sec')].find(x => x.dataset.sec === name) || $('bp'); el.scrollIntoView({ block: 'start' }); };
   $('tbar').addEventListener('click', e => { const b = e.target.closest('button[data-sec]'); if (b) openSection(b.dataset.sec); });
   const refreshToday = () => { if (!document.hidden && !$('home').hidden) renderHome(); };
@@ -1781,12 +2007,12 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   // the published build (version.json, never cached). The new build loads only on Home: at once if nothing was touched
   // while checking, otherwise the next time Home is reached, so a lesson, quiz, results screen or sheet is never cut short.
   // Progress lives in this browser's storage. A framed or local copy skips this.
-  const BUILD = 'd3d1a70cfcfa';
+  const BUILD = '506069b608e4';
   let updateTo = null, lastCheck = 0, lastTouch = 0;
   ['pointerdown', 'keydown', 'focusin'].forEach(ev => document.addEventListener(ev, () => { lastTouch = Date.now(); }, true));
   window.addEventListener('scroll', () => { lastTouch = Date.now(); }, { passive: true });
   function updateTried() { try { return sessionStorage.getItem('splunkquiz.updateTried'); } catch (e) { return null; } }
-  function homeIdle() { return !$('home').hidden && $('deck').hidden && $('cdSheet').hidden && $('bkSheet').hidden; }
+  function homeIdle() { return !$('home').hidden && $('deck').hidden && $('cdSheet').hidden && $('bkSheet').hidden && $('rdSheet').hidden; }
   function applyUpdate() {
     if (!updateTo || updateTried() === updateTo) return false;
     try { sessionStorage.setItem('splunkquiz.updateTried', updateTo); } catch (e) {}   // one try per build, so a stale cache cannot loop
@@ -1830,6 +2056,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
 
   function renderQ() {
     const q = currentQ(), id = q.id, multi = q.type === 'multi';
+    if (!S.checked[id] && QT.id !== id) QT = { id, at: Date.now(), hid: false };
     $('progress').textContent = (S.cur + 1) + ' / ' + S.ids.length;
     const s = stats[id];
     $('qchips').innerHTML = '<span class="chip">' + esc(q.domain) + '</span><span class="chip">' + esc(q.difficulty || 'medium') + '</span>' +
@@ -1895,6 +2122,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   function check() {
     const q = currentQ(); if (!S.picks[q.id] || !S.picks[q.id].length) return;
     S.checked[q.id] = true;
+    if (QT.id === q.id) PACE_LAST.q = paceSample('q', QT.at, QT.hid, 2, 300); QT = {};
     record(q.id, sameSet(S.picks[q.id], q.answer));
     renderQ();
   }
@@ -1974,6 +2202,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   }
   function renderCard() {
     const c = CARD_BY_ID[C.ids[C.i]], s = cardState[c.id];
+    if (!C.flipped && CT.id !== c.id) CT = { id: c.id, at: Date.now(), hid: false };
     $('cchips').innerHTML = '<span class="chip">' + esc(c.domain) + '</span>' + (c.kind ? '<span class="chip">' + esc(c.kind) + '</span>' : '') + (c.new ? '<span class="chip flag">new content</span>' : '') + (s ? '<span class="chip">box ' + s.box + '</span>' : '<span class="chip">unseen</span>');
     $('cprog').textContent = (C.i + 1) + ' / ' + C.ids.length + (C.again.length ? ' (+' + C.again.length + ' again)' : '');
     $('clabel').textContent = C.flipped ? 'Answer' : 'Prompt';
@@ -1996,6 +2225,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     else { s.box = Math.min(BOX_DAYS.length - 1, s.box + 2); }
     s.due = r === 0 ? Date.now() : Date.now() + BOX_DAYS[s.box] * 86400000;
     cardState[id] = s; save(CARD_KEY, cardState);
+    if (CT.id === id) PACE_LAST.c = paceSample('card', CT.at, CT.hid, 2, 180); CT = {};
     planHit('c', id, r === 0 ? false : r >= 2 ? true : null, s.seen > 1);   // Hard counts as a retrieval but never as a success
     C.rated[r]++; C.i++; C.flipped = false;
     if (C.i >= C.ids.length) finishCards(); else renderCard();
