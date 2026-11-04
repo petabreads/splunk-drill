@@ -261,6 +261,11 @@ body.sheet-open { overflow: hidden; }
 .hsheet button.small, .hsheet .chips button { min-height: 40px; padding: 8px 12px; }
 .cdfoot label { min-height: 40px; display: flex; align-items: center; gap: 8px; touch-action: manipulation; }
 .cdsec input, .cdobj input, .cdfoot input { width: 20px; height: 20px; }
+/* ---- Back up or restore sheet ---- */
+.bkhead { margin: 6px 0 0; font-size: 1rem; }
+.bktext { width: 100%; box-sizing: border-box; min-height: 5.5em; font: 16px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--panel-2); color: inherit; border: 1px solid var(--line); border-radius: 8px; padding: 8px; word-break: break-all; resize: vertical; }
+.bkwarn { color: var(--bad); font-weight: 600; }
+button.bkdanger { border-color: var(--bad); color: var(--bad); }
 .cdsec label, .cdobj { display: flex; gap: 8px; align-items: center; cursor: pointer; min-width: 0; }
 .cdsec label { flex: 1; font-weight: 600; font-size: 0.92rem; }
 .cdsec input, .cdobj input { accent-color: var(--accent); flex: none; }
@@ -410,6 +415,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
       <div class="actions" style="margin-top:12px">
         <span class="note">Progress lives in this browser only.</span>
         <div class="spacer"></div>
+        <button class="ghost small" id="backupBtn">Back up or restore</button>
         <button class="ghost small" id="resetBtn">Reset history</button>
       </div>
     </div>
@@ -538,6 +544,23 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   </div>
 </div>
 
+<!-- BACK UP OR RESTORE: all progress as one block of text for Notes or Mail, and the way back -->
+<div class="hscrim" id="bkScrim" hidden></div>
+<div class="hsheet" id="bkSheet" hidden role="dialog" aria-modal="true" aria-label="Back up or restore">
+  <div class="actions"><strong>Back up or restore</strong><div class="spacer"></div><button class="ghost small" id="bkClose">Close</button></div>
+  <p class="note">On a phone, do this inside the home-screen app you study in. It keeps its own progress, apart from Safari.</p>
+  <h3 class="bkhead">Back up</h3>
+  <p class="note">Makes one block of text with your answers, cards, lessons read, plan and settings. Save all of it in Notes or mail it to yourself.</p>
+  <div class="actions"><button class="primary" id="bkMake">Back up now</button><button class="ghost small" id="bkCopy" hidden>Copy</button></div>
+  <textarea class="bktext" id="bkOut" readonly hidden aria-label="Backup text"></textarea>
+  <p class="note" id="bkMsg" role="status"></p>
+  <h3 class="bkhead">Restore</h3>
+  <p class="note">Paste a backup and check it. Then you can replace this device's progress with it.</p>
+  <textarea class="bktext" id="bkIn" aria-label="Paste a backup here" placeholder="Paste the backup text here" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+  <div class="actions"><button id="bkCheck">Check backup</button><button class="bkdanger" id="bkApply" hidden>Replace this device's progress</button></div>
+  <p class="note" id="bkInfo" role="status"></p>
+</div>
+
 <!-- DECK: full-screen slide view of a lesson -->
 <div id="deck" hidden>
   <div class="dtop">
@@ -595,8 +618,9 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
 
   // ---------- storage ----------
   function load(k, fallback) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } }
-  function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-  function del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  let frozen = false;   // set while a restore writes storage, so nothing still in memory can save over it before the reload
+  function save(k, v) { if (frozen) return; try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function del(k) { if (frozen) return; try { localStorage.removeItem(k); } catch (e) {} }
   let stats = load(STATS_KEY, {});          // id -> {a: attempts, c: correct, last: 1|0, t: ts}
   function record(id, ok) { const s = stats[id] || { a: 0, c: 0, last: 0, t: 0 }; s.a++; if (ok) s.c++; s.last = ok ? 1 : 0; s.t = Date.now(); stats[id] = s; save(STATS_KEY, stats); planHit('q', id, !!ok, s.a > 1); }
 
@@ -1713,12 +1737,12 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   // the published build (version.json, never cached). The new build loads only on Home: at once if nothing was touched
   // while checking, otherwise the next time Home is reached, so a lesson, quiz, results screen or sheet is never cut short.
   // Progress lives in this browser's storage. A framed or local copy skips this.
-  const BUILD = 'd647b01d7e52';
+  const BUILD = '461e216f5119';
   let updateTo = null, lastCheck = 0, lastTouch = 0;
   ['pointerdown', 'keydown', 'focusin'].forEach(ev => document.addEventListener(ev, () => { lastTouch = Date.now(); }, true));
   window.addEventListener('scroll', () => { lastTouch = Date.now(); }, { passive: true });
   function updateTried() { try { return sessionStorage.getItem('splunkquiz.updateTried'); } catch (e) { return null; } }
-  function homeIdle() { return !$('home').hidden && $('deck').hidden && $('cdSheet').hidden; }
+  function homeIdle() { return !$('home').hidden && $('deck').hidden && $('cdSheet').hidden && $('bkSheet').hidden; }
   function applyUpdate() {
     if (!updateTo || updateTried() === updateTo) return false;
     try { sessionStorage.setItem('splunkquiz.updateTried', updateTo); } catch (e) {}   // one try per build, so a stale cache cannot loop
@@ -1991,6 +2015,99 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   $('selExam').addEventListener('click', () => setPick(s => s.weight > 0));
   $('selWeak').addEventListener('click', () => { const R = rollups(CORE, planState()), w = new Set(CORE.sections.slice().sort((a, b) => R.sec[a.name] - R.sec[b.name]).slice(0, 3).map(x => x.name)); setPick(s => w.has(s.name)); });
   $('resetBtn').addEventListener('click', () => { const b = $('resetBtn'); if (b.dataset.armed) { stats = {}; cardState = {}; lessonRead = {}; deckStore = { pos: {}, prefs: deckStore.prefs }; D = null; plan = Object.assign(planDefaults(), { exam: plan.exam, set: plan.set, runway: plan.runway, cap: plan.cap, attempts: plan.attempts, bf: 1 }); savePlan(); del(STATS_KEY); del(SESSION_KEY); del(CARD_KEY); del(LESSON_KEY); saveDeck(); clearDeckCounts(); delete b.dataset.armed; b.textContent = 'Reset history'; renderHome(); } else { b.dataset.armed = '1'; b.textContent = 'Click again to confirm reset'; setTimeout(() => { delete b.dataset.armed; b.textContent = 'Reset history'; }, 4000); } });
+
+  // ---------- back up and restore: every progress key as its raw stored text, in base64 with a checksum so Notes or Mail
+  // cannot bend quotes or cut it short unnoticed. Restore checks everything first, then freezes other writes, writes all
+  // keys or none, reads them back and reloads.
+  const BK_KEYS = [STATS_KEY, SESSION_KEY, CARD_KEY, LESSON_KEY, PLAN_KEY, DECK_KEY, PICK_KEY], BK_TAG = 'SPLKBK1:';
+  const BK_SHAPE = { [STATS_KEY]: 'object', [SESSION_KEY]: 'any', [CARD_KEY]: 'object', [LESSON_KEY]: 'object', [PLAN_KEY]: 'plan', [DECK_KEY]: 'object', [PICK_KEY]: 'object' };
+  function bkSum(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return ('0000000' + h.toString(16)).slice(-8); }
+  function b64(str) { const b = new TextEncoder().encode(str); let s = ''; for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); }
+  function unb64(s) { const bin = atob(s), b = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return new TextDecoder().decode(b); }
+  function rawKeys() { const o = {}; for (const k of BK_KEYS) { let v = null; try { v = localStorage.getItem(k); } catch (e) {} if (v != null) o[k] = v; } return o; }
+  function bkCounts(keys) {
+    const j = k => { try { return keys[k] != null ? JSON.parse(keys[k]) : null; } catch (e) { return null; } };
+    const st = j(STATS_KEY) || {}, cs = j(CARD_KEY) || {}, lr = j(LESSON_KEY) || {};
+    return { answers: Object.keys(st).reduce((a, id) => a + ((st[id] && st[id].a) || 0), 0), cards: Object.keys(cs).length, lessons: Object.keys(lr).length };
+  }
+  const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+  const bkCountText = c => plural(c.answers, 'answer') + ', ' + plural(c.cards, 'card') + ', ' + plural(c.lessons, 'lesson') + ' read';
+  function makeBackup() {
+    const keys = rawKeys(), at = new Date(), body = b64(JSON.stringify({ v: 1, build: BUILD, at: at.toISOString(), keys }));
+    return 'Splunk drill backup, ' + at.toLocaleString() + ', build ' + BUILD + ', ' + bkCountText(bkCounts(keys)) + '\n' + BK_TAG + body + ':' + bkSum(body);
+  }
+  function readBackup(text) {
+    const t = String(text || ''), at = t.indexOf(BK_TAG); if (at < 0) throw new Error('No backup found in the pasted text.');
+    const m = /^([A-Za-z0-9+/=]+):([0-9a-f]{8})/.exec(t.slice(at + BK_TAG.length).replace(/\s+/g, ''));
+    if (!m) throw new Error('The backup text is incomplete.');
+    if (bkSum(m[1]) !== m[2]) throw new Error('The backup text was changed or cut short (its checksum does not match).');
+    let o; try { o = JSON.parse(unb64(m[1])); } catch (e) { throw new Error('The backup text cannot be read.'); }
+    if (!o || o.v !== 1 || !o.keys || typeof o.keys !== 'object') throw new Error('This is not a backup this app can read.');
+    for (const k of Object.keys(o.keys)) {
+      if (!(k in BK_SHAPE)) throw new Error('The backup holds an unknown key: ' + k);
+      const raw = o.keys[k]; if (typeof raw !== 'string') throw new Error('The backup value for ' + k + ' is not text.');
+      let v; try { v = JSON.parse(raw); } catch (e) { throw new Error('The backup value for ' + k + ' is damaged.'); }
+      const want = BK_SHAPE[k], isObj = !!v && typeof v === 'object' && !Array.isArray(v);
+      if ((want === 'object' && !isObj) || (want === 'plan' && !(isObj && v.v === 1))) throw new Error('The backup value for ' + k + ' has the wrong shape.');
+    }
+    const c = bkCounts(o.keys); if (!c.answers && !c.cards && !c.lessons) throw new Error('This backup is empty.');
+    return { keys: o.keys, at: o.at, counts: c };
+  }
+  function restoreBackup(bk) {
+    const before = rawKeys(); frozen = true;
+    const put = src => { for (const k of BK_KEYS) { if (src[k] != null) localStorage.setItem(k, src[k]); else localStorage.removeItem(k); } };
+    try {
+      put(bk.keys);
+      for (const k of BK_KEYS) if (localStorage.getItem(k) !== (bk.keys[k] != null ? bk.keys[k] : null)) throw new Error('read back ' + k);
+    } catch (e) {
+      try { put(before); } catch (e2) {}
+      frozen = false; return false;
+    }
+    location.reload(); return true;
+  }
+  let bkOpener = null, bkPending = null;
+  const bkMsg = m => { $('bkMsg').textContent = m; };
+  function bkDisarm() { const b = $('bkApply'); delete b.dataset.armed; b.textContent = "Replace this device's progress"; }
+  function openBk() {
+    bkOpener = document.activeElement; bkPending = null; bkDisarm(); $('bkApply').hidden = true; $('bkInfo').textContent = '';
+    bkMsg(storageOK ? '' : 'Progress is not saved in this window, so there is nothing to back up or restore here.');
+    $('bkMake').disabled = !storageOK; $('bkCheck').disabled = !storageOK;
+    $('bkSheet').hidden = false; $('bkScrim').hidden = false; document.body.classList.add('sheet-open');
+    document.querySelector('.wrap').setAttribute('inert', ''); $('bkClose').focus();
+  }
+  function closeBk() {
+    $('bkSheet').hidden = true; $('bkScrim').hidden = true; document.body.classList.remove('sheet-open'); document.querySelector('.wrap').removeAttribute('inert');
+    bkPending = null; bkDisarm(); if (bkOpener && bkOpener.focus) try { bkOpener.focus(); } catch (e) {}
+  }
+  function bkSelect() { const out = $('bkOut'); out.readOnly = false; out.focus(); out.setSelectionRange(0, out.value.length); }   // iOS selects only an editable box
+  function bkCopy() {
+    const out = $('bkOut'), viaExec = () => { bkSelect(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} out.readOnly = true; bkMsg(ok ? 'Copied. Paste it into Notes or an email to yourself.' : 'Select all of the text in the box and copy it.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(out.value).then(() => bkMsg('Copied. Paste it into Notes or an email to yourself.'), viaExec); else viaExec();
+  }
+  $('bkMake').addEventListener('click', () => {
+    let text; try { text = makeBackup(); } catch (e) { bkMsg('Back up failed: ' + e.message); return; }
+    const out = $('bkOut'); out.value = text; out.hidden = false; $('bkCopy').hidden = false;
+    bkMsg('Backup ready in the box (' + Math.ceil(text.length / 1024) + ' KB). Save all of it, from the first line to the end.');
+    if (navigator.share) navigator.share({ title: 'Splunk drill backup', text }).then(() => bkMsg('Shared. Check that the saved note holds the whole text.'),
+      e => bkMsg(e && e.name === 'AbortError' ? 'Share cancelled. Tap Copy, or select the text in the box.' : 'Sharing did not work here. Tap Copy, or select the text in the box.'));
+  });
+  $('bkCopy').addEventListener('click', bkCopy);
+  $('bkCheck').addEventListener('click', () => {
+    bkPending = null; bkDisarm(); $('bkApply').hidden = true;
+    let bk; try { bk = readBackup($('bkIn').value); } catch (e) { $('bkInfo').innerHTML = '<span class="bkwarn">' + esc(e.message) + '</span>'; return; }
+    const now = bkCounts(rawKeys()), less = bk.counts.answers < now.answers || bk.counts.cards < now.cards || bk.counts.lessons < now.lessons;
+    $('bkInfo').innerHTML = 'Backup from ' + esc(bk.at ? new Date(bk.at).toLocaleString() : 'an unknown date') + ': ' + esc(bkCountText(bk.counts)) + '.<br>This device now: ' + esc(bkCountText(now)) + '.' +
+      (less ? '<br><span class="bkwarn">The backup holds less than this device. Replacing loses the difference.</span>' : '');
+    bkPending = bk; $('bkApply').hidden = false;
+  });
+  $('bkApply').addEventListener('click', () => {
+    const b = $('bkApply'); if (!bkPending) return;
+    if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = 'Tap again to replace everything'; return; }
+    if (!restoreBackup(bkPending)) { bkDisarm(); $('bkInfo').innerHTML = '<span class="bkwarn">Restore failed. This device kept its progress. Try again.</span>'; }
+  });
+  $('bkIn').addEventListener('input', () => { bkPending = null; bkDisarm(); $('bkApply').hidden = true; });
+  $('backupBtn').addEventListener('click', openBk); $('bkClose').addEventListener('click', closeBk); $('bkScrim').addEventListener('click', closeBk);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('bkSheet').hidden) closeBk(); });
   document.addEventListener('keydown', e => {
     if ($('quiz').hidden || e.target.tagName === 'INPUT' && e.target.type === 'number') return;
     const q = currentQ && S ? currentQ() : null; if (!q) return;
