@@ -429,7 +429,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
 
     <div class="panel topics" id="topics">
       <div class="actions"><div class="eyebrow">Topics</div><div class="spacer"></div><button class="ghost small" id="allLessons">All lessons</button></div>
-      <p class="note" style="margin-top:6px">The exam sections in order. Open one for its objectives; each has its own Learn, Drill and Cards. The percentage is how much you have done: Learn slides read and Drill questions answered, weighted by your pace, the same measure as Today. Recall, in the small text, is your answer score: a right answer counts 60 percent, full credit comes when it is right again on a later day, and cards count for 40 percent.</p>
+      <p class="note" style="margin-top:6px">The exam sections in order. Open one for its objectives; each has its own Learn, Drill, Cards, Key facts and Best practices. The percentage is how much of the Learn lessons you have read, the same measure as Today; Drill, Cards, Key facts and Best practices are optional practice. Recall, in the small text, is your answer score: a right answer counts 60 percent, full credit comes when it is right again on a later day, and cards count for 40 percent.</p>
       <div class="bp" id="bp" style="margin-top:10px"></div>
       <button class="ghost bgtoggle" id="bgToggle" aria-expanded="false"></button>
       <div class="bp" id="bpx" hidden></div>
@@ -476,6 +476,8 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
         <button class="ghost" id="lprev">Previous</button>
         <button class="ghost" id="lnext">Next</button>
         <div class="spacer"></div>
+        <button class="ghost" id="lfacts">Key facts</button>
+        <button class="ghost" id="lbp">Best practices</button>
         <button id="lcards">Drill these cards</button>
         <button id="lquiz">Quiz this objective</button>
         <button class="primary" id="lread">Mark as read</button>
@@ -623,7 +625,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     <div class="eyebrow" style="margin-top:6px">Settings</div>
     <div class="dset">Text <span class="seg" id="dsize"><button data-v="0">S</button><button data-v="1">M</button><button data-v="2">L</button></span>
       Slides <span class="seg" id="ddensity"><button data-v="0.8">Roomy</button><button data-v="1">Standard</button><button data-v="1.25">Dense</button></span></div>
-    <div class="dset"><label><input type="checkbox" id="dwrap"> Wrap code</label><label><input type="checkbox" id="dreveal"> Hide trap answers until tapped</label><label><input type="checkbox" id="dwarm"> Warm-up cards</label><label><input type="checkbox" id="drecall"> Recall: hide values until tapped</label><label><input type="checkbox" id="dlines"> One sentence per line</label><label><input type="checkbox" id="dgist"> Short versions first</label><label><input type="checkbox" id="dtrim"> Skip repeats</label></div>
+    <div class="dset"><label><input type="checkbox" id="dwrap"> Wrap code</label><label><input type="checkbox" id="dreveal"> Hide trap answers until tapped</label><label><input type="checkbox" id="drecall"> Recall: hide values until tapped</label><label><input type="checkbox" id="dlines"> One sentence per line</label><label><input type="checkbox" id="dgist"> Short versions first</label><label><input type="checkbox" id="dtrim"> Skip repeats</label></div>
     <div class="dlegend"><span><mark class="tok v">60 seconds</mark> value to memorize</span><span><code class="nm">restart_timeout</code> name to recognize</span><span><span class="tr">Trap</span> wrong belief</span><span><span class="tt">Truth</span> the rule</span></div>
     <div class="actions"><button class="ghost small" id="dfull" hidden>Full text</button><button class="ghost small" id="dpage">Read as one page</button><button class="ghost small" id="drestart">Start over</button></div>
   </div>
@@ -701,7 +703,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const shuffleOpts = $('optShuffle').checked;
     const order = {};
     for (const id of ids) { const n = BY_ID[id].options.length; const idx = [...Array(n).keys()]; order[id] = shuffleOpts ? shuffle(idx) : idx; }
-    S = { mode, ids, order, picks: {}, checked: {}, flags: {}, cur: 0, startedAt: Date.now(), limitSec: mode === 'exam' ? ids.length * 60 : 0, done: false, fromLesson: (opts && opts.fromLesson) || null, fromLean: !!(opts && opts.fromLean), fromPlan: (opts && opts.fromPlan) || null, plan: (opts && opts.plan) || null, snap: snapRoll() };
+    S = { mode, ids, order, picks: {}, checked: {}, flags: {}, cur: 0, startedAt: Date.now(), limitSec: mode === 'exam' ? ids.length * 60 : 0, done: false, fromLesson: (opts && opts.fromLesson) || null, fromLean: !!(opts && opts.fromLean), fromView: (opts && opts.fromView) || null, fromPlan: (opts && opts.fromPlan) || null, plan: (opts && opts.plan) || null, snap: snapRoll() };
     persist();
     showView('quiz'); renderQ(); startTimer();
   }
@@ -856,14 +858,15 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     $('lfocus').innerHTML = '<b>How the exam tests this</b>' + inline(l.examFocus || '');
     let html = '';
     for (const s of (l.sections || [])) html += '<h3>' + esc(s.heading) + '</h3>' + renderBlocks(s.blocks);
-    if ((l.keyFacts || []).length) html += '<h3>Key facts</h3><ul class="facts">' + l.keyFacts.map((f, fi) => { const src = (l.sources || [])[f.src]; return '<li>' + hlTagged(f.fact, factTag(l.id, fi), false) + (src ? '<a class="cite" href="' + esc(src.url) + '" target="_blank" rel="noopener" title="' + esc((src.title || '') + (src.version ? ' (' + src.version + ')' : '') + (f.quote ? ': ' + f.quote : '')) + '">[' + (f.src + 1) + ']</a>' : '') + '</li>'; }).join('') + '</ul>';
-    if ((l.bestPractices || []).length) html += '<h3 style="color:var(--good)">Best practices</h3><ul class="dpract">' + l.bestPractices.map(s => '<li>' + hlHtml(citeAll(l, inline(s)), [], { left: 0 }) + '</li>').join('') + '</ul>';
+    // key facts and best practices live in their own views (the Key facts and Best practices buttons below)
     if ((l.traps || []).length) html += '<h3>Traps</h3><div class="traps">' + l.traps.map(t => { const m = /^\s*Trap:\s*([\s\S]*?)\s*Truth:\s*([\s\S]*)$/.exec(t); return '<div class="trap">' + (m ? '<span class="tr">Trap</span> ' + inline(m[1]) + '<br><span class="tt">Truth</span> ' + inline(m[2]) : inline(t)) + '</div>'; }).join('') + '</div>';
     if ((l.terminology || []).length) html += '<h3>Terminology</h3><ul>' + l.terminology.map(s => '<li>' + inline(s) + '</li>').join('') + '</ul>';
     if ((l.sources || []).length) html += '<h3>Sources</h3><ol class="srcs">' + l.sources.map(s => '<li><a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.title || s.url) + '</a>' + (s.version ? ' <span class="note">(' + esc(s.version) + ')</span>' : '') + '</li>').join('') + '</ol>';
     $('lbody').innerHTML = html;
     const i = ORDERED.findIndex(x => x.id === id);
     $('lprev').disabled = i <= 0; $('lnext').disabled = i >= ORDERED.length - 1;
+    const nf = viewCount(id, 'facts'), nb = viewCount(id, 'practices');
+    $('lfacts').disabled = !nf; $('lfacts').textContent = 'Key facts ' + nf; $('lbp').disabled = !nb; $('lbp').textContent = 'Best practices ' + nb;
     $('lcards').disabled = cIds.length === 0; $('lcards').textContent = 'Drill these ' + cIds.length + ' cards';
     $('lquiz').disabled = qIds.length === 0; $('lquiz').textContent = 'Quiz these ' + qIds.length + ' questions';
     $('lread').textContent = lessonRead[id] ? 'Mark as unread' : 'Mark as read';
@@ -990,7 +993,8 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     }
     return slides;
   }
-  // opts: {density: 0.8|1|1.25, hints: [...], warm: [cardIds], sources: true}
+  // opts: {density: 0.8|1|1.25, lines, hints: [...], trim}. The result holds every chapter; learnDeck, leanDeck and viewDeck pick
+  // the slides each screen shows, so a pid means the same slide everywhere
   function compileDeck(l, opts) {
     const o = opts || {}, d = o.density || 1;
     const P = Object.assign({}, DECK_P, { target: Math.round(DECK_P.target * d), hard: Math.round(DECK_P.hard * d), mergeMax: Math.round(DECK_P.mergeMax * d), mergeEach: Math.round(DECK_P.mergeEach * d), lineCost: o.lines ? DECK_P.lineCost : 0, listWords: Math.round(DECK_P.listWords * d), factWords: Math.round(DECK_P.factWords * d), codeLines: Math.round(DECK_P.codeLines * d) });
@@ -999,7 +1003,6 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     add({ k: 'intro', ch: 'Start', w: wc(l.summary), text: l.summary, pid: 'intro' });
     const fs = sentences(l.examFocus || ''), fw = wc(l.examFocus || '') + (fs.length > 1 ? P.lineCost * fs.length : 0);
     (fw <= Math.round(P.hard * 0.85) ? [fs] : chunkSentences(fs, Object.assign({}, P, { target: Math.round(P.target * 0.8), hard: Math.round(P.hard * 0.85) })).chunks).forEach((c, i) => add({ k: 'focus', ch: 'Start', w: c.reduce((a, s) => a + wc(s), 0), text: c.join(' '), cont: i > 0, pid: 'focus.' + i }));
-    (o.warm || []).forEach((cid, i) => add({ k: 'warm', ch: 'Start', w: 0, card: cid, pid: 'warm.' + i }));
     const seen = {};
     // Skip repeats for explanation blocks (learn-blocks.json): a skipped block drops out, a condensed one becomes its recall
     // lines on one slide (the block itself stays one tap away); every other block keeps its own number
@@ -1023,20 +1026,51 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     S.forEach((s, i) => { const c = chapters[chapters.length - 1]; if (c && c.ch === s.ch) { c.n++; return; } chapters.push({ ch: s.ch, label: s.ch === 'Start' ? 'Start' : s.ch === 'Facts' ? 'Key facts' : s.ch === 'Traps' ? 'Traps' : s.ch === 'Practices' ? 'Best practices' : s.ch === 'Terms' ? 'Terminology' : s.ch === 'Sources' ? 'Sources' : s.ch === 'Finish' ? 'Finish' : (s.h || s.ch), start: i, n: 1 }); });
     return { slides: S, chapters };
   }
-  // the lean tier opened from Today's Continue: start, warm-up, key facts, traps and finish; the full text is one tap away
-  const LEAN_K = { title: 1, intro: 1, focus: 1, warm: 1, fact: 1, trap: 1, finish: 1 };
-  function leanDeck(c) {
-    const lab = {}; c.chapters.forEach(x => { lab[x.ch] = x.label; });
-    const slides = c.slides.filter(x => LEAN_K[x.k]), chapters = [];
+  // a deck from some of a compile's slides, chapters folded again (same one-line fold as compileDeck, same labels)
+  function pickDeck(c, keep, extra) {
+    const lab = { Finish: 'Finish' }; c.chapters.forEach(x => { lab[x.ch] = x.label; });
+    const slides = c.slides.filter(keep).concat(extra || []), chapters = [];
     slides.forEach((x, i) => { const ch = chapters[chapters.length - 1]; if (ch && ch.ch === x.ch) { ch.n++; return; } chapters.push({ ch: x.ch, label: lab[x.ch] || x.ch, start: i, n: 1 }); });
     return { slides, chapters };
   }
+  // the Learn deck: cover, overview, exam focus, the sections, traps, terminology, sources and finish. Key facts and best practices
+  // are their own views (viewDeck), opened from Topics, the lesson page and the finish slide; progress counts Learn alone
+  const VIEW_K = { fact: 'facts', practice: 'practices' };
+  function learnDeck(c) { return pickDeck(c, x => !VIEW_K[x.k]); }
+  // a Key facts or Best practices view: that chapter's slides and an end slide (k: 'end', never 'finish', so nothing is marked read)
+  function viewDeck(c, kind) { return pickDeck(c, x => VIEW_K[x.k] === kind, [{ k: 'end', ch: 'Finish', w: 0, pid: 'end' }]); }
+  // the lean tier opened from Today's Continue: start, key facts, traps and finish; the full text is one tap away
+  const LEAN_K = { title: 1, intro: 1, focus: 1, fact: 1, trap: 1, finish: 1 };
+  function leanDeck(c) { return pickDeck(c, x => LEAN_K[x.k]); }
   // a lesson's learn-trim.json rows as compileDeck's opts.trim: the full deck hides repeats and turns restating key facts into
   // recall checks; the lean deck, where key facts are the first exposure, only drops exact duplicates
   function trimSpec(rows, lean) {
     const t = { hide: {}, recall: lean ? null : {} };
     for (const r of rows || []) { if (r.do === 'hide') t.hide[r.at] = 1; else if (r.do === 'recall' && !lean) t.recall[r.at] = r.cloze; else if ((r.do === 'condense' || r.do === 'skip') && /^s\d+\.b\d+$/.test(r.at)) (t.blocks = t.blocks || {})[r.at] = r; }
     return t;
+  }
+  // the Key facts and Best practices views show every item except an exact duplicate (a hide row with dupOf); key facts keep
+  // their recall checks. A practice hidden from Learn because it restates the sections is shown here: this is where it lives now
+  function viewSpec(rows) {
+    const t = { hide: {}, recall: {} };
+    for (const r of rows || []) { if (r.do === 'hide' && r.dupOf) t.hide[r.at] = 1; else if (r.do === 'recall') t.recall[r.at] = r.cloze; }
+    return t;
+  }
+  // where a saved place lands in a deck that no longer has its slide: the exact pid first; otherwise the first slide at or after
+  // it in the full compile's order (a hidden fact falls to the next fact, a removed chapter or warm-up to the chapter after it),
+  // never a proportional guess. full is the compile the deck was picked from; -1 when the pid is unknown
+  const PID_CH = { warm: 'Start', fact: 'Facts', trap: 'Traps', bp: 'Practices', term: 'Terms' }, CH_ORDER = ['Start', 'S', 'Facts', 'Traps', 'Practices', 'Terms', 'Sources', 'Finish'];
+  function placeOf(full, slides, pid) {
+    if (!pid) return -1;
+    let k = slides.findIndex(s => s.pid === pid); if (k >= 0) return k;
+    const have = {}; slides.forEach((s, i) => { if (have[s.pid] == null) have[s.pid] = i; });
+    const m = /^(warm|fact|trap|bp|term)\.(\d+)$/.exec(pid), rank = c => CH_ORDER.indexOf(/^S\d+$/.test(c) ? 'S' : c);
+    let at = full.findIndex(s => s.pid === pid);
+    if (at < 0 && m) at = full.findIndex(s => { const n = /^(fact|trap|bp|term)\.(\d+)$/.exec(s.pid); return !!n && n[1] === m[1] && +n[2] >= +m[2]; });
+    if (at < 0 && m) { const r = rank(PID_CH[m[1]]); at = full.findIndex(s => rank(s.ch) > r); }
+    if (at < 0) return -1;
+    for (let i = at; i < full.length; i++) if (have[full[i].pid] != null) return have[full[i].pid];
+    return -1;
   }
   // a recall check: the span is hidden until tapped; each part is rendered on its own (inl escapes and turns backticks into
   // code), so markup never straddles the boundary, and the reveal swaps in the span's own rendered HTML
@@ -1210,6 +1244,10 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (p.exam != null && dateKey(p.exam) == null) p.exam = null;
     const keys = Object.keys(p.days).map(Number).sort((a, b) => a - b); keys.slice(0, Math.max(0, keys.length - 120)).forEach(k => delete p.days[k]);
     const t = dayKey(Date.now()); for (const m of [p.fr, p.lg]) for (const k in m) if (m[k] > t) m[k] = t;   // clock moved back
+    for (const lid in p.shaky) {   // warm-up slides left Learn: a Shaky flag on one moves to the lesson's intro slide, where it shows and clears
+      const f = p.shaky[lid]; if (!f || typeof f !== 'object') continue;
+      for (const k of Object.keys(f)) if (/^warm\.\d+$/.test(k)) { if (f.intro == null) f.intro = f[k]; delete f[k]; }
+    }
     return p;
   }
   let plan = loadPlan();
@@ -1232,7 +1270,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const t = todayKey(), d = dayRec(t), crit = kind === 'q' ? CORE.q.has(id) : CORE.c.has(id), before = d.r;
     const S = SEC(), meas = PACE_LAST[kind === 'q' ? 'q' : 'c']; PACE_LAST.q = PACE_LAST.c = null;   // measured time when there is one
     const sec = meas != null ? meas : kind === 'q' ? (repeat ? S.qRe : S.q) : (repeat ? S.cardRe : S.card);
-    d.r++; d.m = (d.m || 0) + sec / 60; if (!repeat) d.mn = (d.mn || 0) + sec / 60;   // mn: first looks only, the new material readiness counts
+    d.r++; d.m = (d.m || 0) + sec / 60;   // mn (the new material readiness counts) comes only from Learn slides now, credited in renderDeck
     if (crit) { if (ok === false) delete plan.fr[id]; else if (ok === true && plan.fr[id] == null) plan.fr[id] = t; if (kind === 'c' && ok === true) plan.lg[id] = t; }
     if (before < 10 && d.r >= 10) { plan.sd = (plan.sd || 0) + 1; plan.best = Math.max(plan.best || 0, runState(plan.days, t).run); }
     savePlan();
@@ -1246,47 +1284,59 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     plan.bf = 1; savePlan();
   }
   const DECK_KEY = 'splunkquiz.deck.v1';
-  let deckStore = load(DECK_KEY, {}); deckStore.pos = deckStore.pos || {}; deckStore.prefs = Object.assign({ size: 1, density: 1, wrap: true, reveal: true, warm: true, recall: false, lines: true, gist: true, trim: true, view: 'slides' }, deckStore.prefs || {});
+  let deckStore = load(DECK_KEY, {}); deckStore.pos = deckStore.pos || {}; deckStore.prefs = Object.assign({ size: 1, density: 1, wrap: true, reveal: true, recall: false, lines: true, gist: true, trim: true, view: 'slides' }, deckStore.prefs || {});   // an old prefs.warm (warm-up cards, retired) is carried along unused
   function saveDeck() { save(DECK_KEY, deckStore); }
-  let D = null;   // {id, slides, chapters, i, max, revealed:{}, fooled:{}, flipped:{}, toastTimer}
+  let D = null;   // {id, slides, chapters, full, i, max, lean, view: null | 'facts' | 'practices', back, revealed:{}, fooled:{}, toastTimer}
   const deckCountCache = {};
-  function warmCount(l) { if (!deckStore.prefs.warm) return 0; const ids = (l.cardIds || []).filter(x => CARD_BY_ID[x]); return ids.length < 2 ? 0 : Math.min(3, Math.max(2, Math.round(ids.length / 8))); }
   // a paragraph with a short version stays whole on one slide (a keep hint), so the slide can show the short version in its place
   function gistKeeps(lid) { return deckStore.prefs.gist ? (GISTS[lid] || []).filter(g => !/\.i\d+$/.test(g.at)).map(g => ({ at: g.at, do: 'keep' })) : []; }
   // Skip repeats on (the default): the lesson's learn-trim.json rows; any failure compiles the deck untrimmed, so a bad entry can
   // never stop a lesson or Home from showing
-  function trimFor(lid, lean) { return deckStore.prefs.trim && (TRIM[lid] || []).length ? trimSpec(TRIM[lid], lean) : null; }
-  function trimNote(lid, lean) {
-    const t = trimFor(lid, lean); if (!t) return '';
-    const nh = Object.keys(t.hide).filter(k => !lean || /^(kf|trap)\./.test(k)).length, nr = t.recall ? Object.keys(t.recall).length : 0;
-    const bl = lean ? [] : Object.values(t.blocks || {}), nc = bl.filter(r => r.do === 'condense').length, ns = bl.filter(r => r.do === 'skip').length;
+  function trimFor(lid, lean, view) { const rows = TRIM[lid] || []; return deckStore.prefs.trim && rows.length ? (view ? viewSpec(rows) : trimSpec(rows, lean)) : null; }
+  function trimNote(lid, lean, view) {
+    const t = trimFor(lid, lean, view); if (!t) return '';
+    const nh = Object.keys(t.hide).filter(k => view ? true : lean ? /^(kf|trap)\./.test(k) : /^(trap|term)\./.test(k)).length, nr = t.recall && (lean || view === 'facts') ? Object.keys(t.recall).length : 0;
+    const bl = lean || view ? [] : Object.values(t.blocks || {}), nc = bl.filter(r => r.do === 'condense').length, ns = bl.filter(r => r.do === 'skip').length;
     if (!nh && !nr && !nc && !ns) return '';
     return '<p class="note">Skip repeats is on: ' + [nc ? plural(nc, 'explanation block') + ' condensed' : '', ns ? plural(ns, 'block') + ' you already read skipped' : '', nh ? plural(nh, 'repeated item') + ' hidden' : '', nr ? plural(nr, 'key fact') + ' to recall' : ''].filter(Boolean).join(', ') + '. Turn it off in the lesson settings.</p>';
   }
-  function compileFor(l, warm, lean) {
-    const opts = { density: deckStore.prefs.density, lines: deckStore.prefs.lines, hints: (HINTS[l.id] || []).concat(gistKeeps(l.id)), warm };
-    let c = null; const t = trimFor(l.id, lean);
+  // the deck for one screen: Learn (lean from Continue) or a Key facts / Best practices view; .full is the compile it was picked
+  // from, which placeOf walks when a saved place names a slide this deck no longer has
+  function compileFor(l, lean, view) {
+    const opts = { density: deckStore.prefs.density, lines: deckStore.prefs.lines, hints: (HINTS[l.id] || []).concat(gistKeeps(l.id)) };
+    let c = null; const t = trimFor(l.id, lean, view);
     if (t) try { c = compileDeck(l, Object.assign({ trim: t }, opts)); } catch (e) { c = null; }
     if (!c) c = compileDeck(l, opts);
-    return lean ? leanDeck(c) : c;
+    const d = view ? viewDeck(c, view) : lean ? leanDeck(c) : learnDeck(c);
+    d.full = c.slides; return d;
   }
-  function posKey(id, lean) { return lean ? id + '~lean' : id; }
-  function deckCount(id, lean) { const ck = posKey(id, lean); if (deckCountCache[ck] == null) { const l = LESSON_BY_ID[id]; deckCountCache[ck] = l ? compileFor(l, (l.cardIds || []).filter(x => CARD_BY_ID[x]).slice(0, warmCount(l)), lean).slides.length : 0; } return deckCountCache[ck]; }
-  // where a saved position lands in the deck as compiled now (density and warm-up may have changed since it was saved)
-  function posNow(id, lean) { const pos = deckStore.pos[posKey(id, lean)]; if (!pos) return null; const n = deckCount(id, lean); return { i: Math.min(n - 1, Math.round(pos.i / Math.max(1, pos.n) * n)), n }; }
+  function posKey(id, lean, view) { return lean ? id + '~lean' : view ? id + '~' + view : id; }
+  // the pid and chapter of every slide (the deck and the compile it was picked from), enough for placeOf without keeping slides
+  function deckShape(id, lean, view) {
+    const ck = posKey(id, lean, view) + '#shape';
+    if (deckCountCache[ck] == null) { const l = LESSON_BY_ID[id], c = l ? compileFor(l, lean, view) : { slides: [], full: [] }, pick = s => ({ pid: s.pid, ch: s.ch }); deckCountCache[ck] = { slides: c.slides.map(pick), full: c.full.map(pick) }; }
+    return deckCountCache[ck];
+  }
+  function deckCount(id, lean, view) { return deckShape(id, lean, view).slides.length; }
+  // how many key facts or best practices a lesson's view shows (exact duplicates hidden when Skip repeats is on)
+  function viewCount(id, view) { const ck = posKey(id, false, view) + '#items'; if (deckCountCache[ck] == null) { const l = LESSON_BY_ID[id]; deckCountCache[ck] = l ? compileFor(l, false, view).slides.reduce((a, s) => a + (s.items ? s.items.length : 0), 0) : 0; } return deckCountCache[ck]; }
+  // where a saved position lands in the deck as compiled now: the slide openDeck opens on (placeOf by pid, so a place on a slide
+  // that left the deck counts from the slide after it), else the proportional guess (density or Skip repeats may have changed)
+  function posNow(id, lean, view) {
+    const pos = deckStore.pos[posKey(id, lean, view)]; if (!pos) return null;
+    const c = deckShape(id, lean, view), n = c.slides.length;
+    const k = pos.pid && pos.pid !== 'finish' && pos.pid !== 'end' ? placeOf(c.full, c.slides, pos.pid) : -1;
+    return { i: k >= 0 ? k : Math.min(n - 1, Math.round(pos.i / Math.max(1, pos.n) * n)), n };
+  }
   function clearDeckCounts() { for (const k in deckCountCache) delete deckCountCache[k]; }
-  function pickWarm(l) {
-    const k = warmCount(l); if (!k) return [];
-    return shuffle((l.cardIds || []).filter(x => CARD_BY_ID[x])).slice(0, k);
-  }
-  function buildDeck(id, keepPos, carry, lean) {
+  function buildDeck(id, keepPos, carry, lean, view) {
     const l = LESSON_BY_ID[id];
-    const same = (keepPos || carry) && D && D.id === id;
-    const warm = same ? D.warm : pickWarm(l);
+    const v = view !== undefined ? (view || null) : (D && D.id === id ? D.view || null : null);
+    const same = (keepPos || carry) && D && D.id === id && (D.view || null) === v;
     const isLean = lean != null ? !!lean : !!(same && D.lean);
-    const c = compileFor(l, warm, isLean);
-    const prev = same ? D : null;   // revealed, fooled and flipped are keyed by slide pid, which survives a recompile
-    D = { id, slides: c.slides, chapters: c.chapters, i: 0, max: 0, warm, lean: isLean, plan: prev ? prev.plan : null, hold: prev ? prev.hold : {}, gopen: prev ? prev.gopen : {}, revealed: prev ? prev.revealed : {}, fooled: prev ? prev.fooled : {}, flipped: prev ? prev.flipped : {} };
+    const c = compileFor(l, isLean, v);
+    const prev = same ? D : null;   // revealed and fooled are keyed by slide pid, which survives a recompile
+    D = { id, slides: c.slides, chapters: c.chapters, full: c.full, i: 0, max: 0, lean: isLean, view: v, back: prev ? prev.back : null, plan: prev ? prev.plan : null, hold: prev ? prev.hold : {}, gopen: prev ? prev.gopen : {}, revealed: prev ? prev.revealed : {}, fooled: prev ? prev.fooled : {} };
     return D;
   }
   function relocate(old, slides) {
@@ -1294,12 +1344,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     let k = slides.findIndex(s => s.pid === old.pid); if (k >= 0) return k;
     if (old.sec != null && old.bi) { k = slides.findIndex(s => s.sec === old.sec && s.bi && s.bi.indexOf(old.bi[0]) >= 0); if (k >= 0) return k; }
     if (old.items && old.items[0] && old.items[0].i != null) { k = slides.findIndex(s => s.k === old.k && s.items && s.items.some(x => x.i === old.items[0].i)); if (k >= 0) return k; }
-    return nearPid(slides, old.pid);
-  }
-  // a place saved on a slide that Skip repeats now hides: the next remaining slide of the same kind
-  function nearPid(slides, pid) {
-    const m = /^(fact|bp|term|trap)\.(\d+)$/.exec(pid || ''); if (!m) return -1;
-    return slides.findIndex(s => { const n = /^(fact|bp|term|trap)\.(\d+)$/.exec(s.pid); return !!n && n[1] === m[1] && +n[2] >= +m[2]; });
+    return placeOf(D.full, slides, old.pid);
   }
   function openLesson(id, opts) {
     const o = opts || {};
@@ -1307,19 +1352,26 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (deckStore.prefs.view === 'page' && !o.forceDeck) { renderLessonPage(id); return; }
     openDeck(id, o);
   }
+  // a Key facts or Best practices view; from a Learn deck or the lesson page its back button returns there, otherwise it goes
+  // where the lesson would (Home or the index)
+  function openView(id, kind, opts) {
+    const o = opts || {}; if (!LESSON_BY_ID[id] || (kind !== 'facts' && kind !== 'practices')) return;
+    const back = o.fromDeck && D && !$('deck').hidden ? (D.view ? D.back : { deck: D }) : o.fromPage ? { page: id, y: window.scrollY } : null;   // view to view keeps the way back
+    hideSheet(); openDeck(id, { view: kind, back });
+  }
   function openDeck(id, opts) {
     const o = opts || {};
-    LV = id; buildDeck(id, false, o.at === 'finish', !!o.lean);   // returning from the drill or quiz keeps the fooled list
-    D.plan = o.plan || null;
-    const pos = deckStore.pos[posKey(id, D.lean)];
+    hideToast(); LV = id; buildDeck(id, false, o.at === 'finish', !!o.lean, o.view || null);   // returning from the drill or quiz keeps the fooled list
+    D.plan = o.plan || null; if (o.back !== undefined) D.back = o.back;
+    const pos = deckStore.pos[posKey(id, D.lean, D.view)], last = p => p === 'finish' || p === 'end';
     let at = 0;
     if (o.at === 'finish') at = D.slides.length - 1;
     else if (o.at === 'start') at = 0;
-    else if (pos && pos.pid && pos.pid !== 'finish') { let k = D.slides.findIndex(s => s.pid === pos.pid); if (k < 0) k = nearPid(D.slides, pos.pid); at = k >= 0 ? k : Math.min(D.slides.length - 1, Math.round((pos.i / Math.max(1, pos.n)) * D.slides.length)); }
-    if (pos && pos.maxPid && pos.pid !== 'finish') { let k = D.slides.findIndex(s => s.pid === pos.maxPid); if (k < 0) k = nearPid(D.slides, pos.maxPid); D.max = k >= 0 ? k : at; }
+    else if (pos && pos.pid && !last(pos.pid)) { const k = placeOf(D.full, D.slides, pos.pid); at = k >= 0 ? k : Math.min(D.slides.length - 1, Math.round((pos.i / Math.max(1, pos.n)) * D.slides.length)); }
+    if (pos && pos.maxPid && !last(pos.pid)) { const k = placeOf(D.full, D.slides, pos.maxPid); D.max = k >= 0 ? k : at; }
     D.max = Math.max(D.max, at);
     if (!$('home').hidden) deckFrom = 'home'; else if (!$('learn').hidden && !$('lessonIndex').hidden) deckFrom = 'index';   // from a quiz, cards or the next lesson: unchanged
-    $('dindex').textContent = deckFrom === 'index' ? 'Lessons' : 'Home';
+    $('dindex').textContent = D.back ? 'Lesson' : deckFrom === 'index' ? 'Lessons' : 'Home';
     showView('learn'); $('lessonIndex').hidden = true; $('lessonView').hidden = true;
     $('deck').hidden = false; document.body.classList.add('deck-open'); $('deck').style.setProperty('--dfs', ['1.0rem', '1.08rem', '1.2rem'][deckStore.prefs.size] || '1.08rem');
     try { if (!(history.state && history.state.deck)) history.pushState({ deck: id }, ''); } catch (e) {}
@@ -1331,15 +1383,29 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (toIndex) showLessonIndex();
     if (!keepHistory) try { if (history.state && history.state.deck) history.back(); } catch (e) {}   // popstate then finds the deck already hidden and does nothing
   }
-  // the deck's top-left button and Escape go back where the lesson was opened: Home (Today, Continue, Topics) or the lesson index
-  function leaveDeck() { const toIndex = deckFrom === 'index'; closeDeck(toIndex); if (!toIndex) { LV = null; renderHome(); showView('home'); } }
+  // the deck's top-left button and Escape go back where the lesson was opened: Home (Today, Continue, Topics) or the lesson index;
+  // a view opened from a Learn deck or the lesson page returns there
+  function leaveDeck() {
+    if (D && D.view && D.back) { returnFromView(); return; }
+    const toIndex = deckFrom === 'index'; closeDeck(toIndex); if (!toIndex) { LV = null; renderHome(); showView('home'); }
+  }
+  // back to the Learn deck the view came from (its place, reveals and fooled list intact; recompiled in case a setting changed
+  // meanwhile) or to the lesson page
+  function returnFromView() {
+    const b = D.back; hideSheet(); hideToast();
+    if (b.page) { closeDeck(false); renderLessonPage(b.page); window.scrollTo(0, b.y || 0); return; }   // back to where the page's buttons were
+    D = b.deck; LV = D.id;
+    try { if (!(history.state && history.state.deck)) history.pushState({ deck: D.id }, ''); } catch (e) {}
+    $('dindex').textContent = D.back ? 'Lesson' : deckFrom === 'index' ? 'Lessons' : 'Home';
+    recompileKeepPlace();
+  }
   // hand a deck over to the plan's next step; when that step is another deck the history entry stays, so the
   // asynchronous popstate from history.back() cannot close the deck that just opened
   function deckToPlan() { const nx = nextStep(); closeDeck(false, nx.k === 'lesson' || nx.k === 'read'); runStep(nx); }
-  window.addEventListener('popstate', () => { if (!$('deck').hidden) { closeDeck(false); if (deckFrom === 'index') showLessonIndex(); else { LV = null; renderHome(); showView('home'); } } });
+  window.addEventListener('popstate', () => { if (!$('deck').hidden) { if (D && D.view && D.back) { returnFromView(); return; } closeDeck(false); if (deckFrom === 'index') showLessonIndex(); else { LV = null; renderHome(); showView('home'); } } });
   function savePos() {
     if (!D) return;
-    const s = D.slides[D.i]; deckStore.pos[posKey(D.id, D.lean)] = { pid: s.pid, i: D.i, n: D.slides.length, maxPid: D.slides[D.max].pid, t: Date.now() }; saveDeck();
+    const s = D.slides[D.i]; deckStore.pos[posKey(D.id, D.lean, D.view)] = { pid: s.pid, i: D.i, n: D.slides.length, maxPid: D.slides[D.max].pid, t: Date.now() }; saveDeck();
   }
   function chapterOf(i) { return D.chapters.find(c => i >= c.start && i < c.start + c.n) || D.chapters[0]; }
   function codeHtml(text, lang) {
@@ -1382,13 +1448,10 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (s.k === 'title') {
       const q = (l.questionIds || []).filter(x => BY_ID[x]).length, c = (l.cardIds || []).filter(x => CARD_BY_ID[x]).length, words = l.sections.reduce((a, sec) => a + sec.blocks.reduce((b, x) => b + wc(x.text), 0), 0);
       h = '<div class="drun">' + esc(l.domain) + (d.weight ? ' · ' + d.weight + '% of exam' : ' · background') + '</div><h2>' + esc(l.title) + '</h2>' + (l.code !== 'X' ? '<p class="note">Objective ' + esc(l.code) + ': ' + esc(l.objective) + '</p>' : '') +
-        '<p class="dstats">' + D.slides.length + ' slides · about ' + (D.lean ? Math.max(1, Math.round(D.slides.length * SEC().slide / 60)) : Math.max(3, Math.round(D.slides.length * SEC().slideFull / 60))) + ' min · ' + q + ' questions · ' + c + ' cards</p>' + (lessonRead[l.id] ? '<p class="note">You have read this lesson.</p>' : '') + trimNote(l.id, D.lean);
+        '<p class="dstats">' + D.slides.length + ' slides · about ' + (D.lean ? Math.max(1, Math.round(D.slides.length * SEC().slide / 60)) : Math.max(3, Math.round(D.slides.length * SEC().slideFull / 60))) + ' min · ' + q + ' questions · ' + c + ' cards</p>' + (lessonRead[l.id] ? '<p class="note">You have read this lesson.</p>' : '') + trimNote(l.id, D.lean, null);
     } else if (s.k === 'intro') h = '<div class="dkick">What this covers</div>' + T(s.text, true);
     else if (s.k === 'focus') h = '<div class="dkick">How the exam tests this</div><div class="dcallout">' + T(s.text, false) + '</div>' + cont();
-    else if (s.k === 'warm') {
-      const c = CARD_BY_ID[s.card], flipped = !!D.flipped[s.pid];
-      h = '<div class="dkick">Warm-up · what do you already know?</div><div class="dcard"><div class="front">' + esc(c.front) + '</div>' + (flipped ? '<div class="dback">' + hlTagged(c.back, cardTag(c.id, D.id), false) + '</div>' : '') + '</div><p class="note">Nothing is scored here. The card, with its worked example, comes back in the drill after the lesson.</p>';
-    } else if (s.k === 'prose' && s.cz) {   // a condensed block: its recall lines, and the block itself one tap away
+    else if (s.k === 'prose' && s.cz) {   // a condensed block: its recall lines, and the block itself one tap away
       const key = s.pid, open = !!gopen[key], b = blocks[s.bi[0]] || {}, lines = s.cz.map(x => { const n = ln++; return '<span class="sl' + (hold === n ? ' on' : '') + '" data-ln="' + n + '">' + H(inline(x)) + '</span>'; }).join('');
       const full = b.type === 'ul' ? '<ul>' + listItems(b.text).map(x => '<li>' + H(inline(x)) + '</li>').join('') + '</ul>' : b.type === 'code' ? codeHtml(b.text, b.lang) : T(b.text || '', true);
       h = run() + '<div class="gist cz"><div class="gk">Condensed: the rest is covered elsewhere</div><div class="slines">' + lines + '</div><button class="gfull" data-g="' + esc(key) + '" aria-expanded="' + open + '">' + (open ? 'Hide full text' : 'Full text') + '</button>' + (open ? '<div class="gtext">' + full + '</div>' : '') + '</div>';
@@ -1409,7 +1472,18 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
       const tn = D.chapters.find(c => c.ch === 'Traps'); const nth = i - tn.start + 1;
       h = '<div class="dkick">Trap ' + nth + ' of ' + tn.n + '</div><div class="dtrap">' + (m ? '<span class="tr">Trap</span><div>' + hlHtml(citeAll(l, inline(m[1])), [], { left: 0 }) + '</div><div class="dtruth"' + (show ? '' : ' hidden') + '><span class="tt">Truth</span><div>' + hlHtml(citeAll(l, inline(m[2])), vals, { left: 2, recall: false }) + '</div><label class="dmark"><input type="checkbox" data-fooled="1"' + (D.fooled[s.pid] ? ' checked' : '') + '> I would have picked this</label></div>' : '<div>' + citeAll(l, inline(s.text)) + '</div>') + '</div>' + (!show ? '<p class="note">Decide first, then reveal the truth.</p>' : '');
     } else if (s.k === 'practice') {
-      h = '<div class="dkick good">Best practices</div><ul class="dpract">' + s.items.map(x => '<li>' + hlHtml(citeAll(l, inline(x.t)), [], { left: 0 }) + '</li>').join('') + '</ul>';
+      const pc = D.chapters.find(c => c.ch === 'Practices'), nth = pc ? i - pc.start + 1 : 1;
+      h = '<div class="dkick good">Best practices ' + nth + ' of ' + (pc ? pc.n : 1) + '</div><ul class="dpract">' + s.items.map(x => '<li>' + hlHtml(citeAll(l, inline(x.t)), [], { left: 0 }) + '</li>').join('') + '</ul>';
+    } else if (s.k === 'end') {   // the end of a Key facts or Best practices view: nothing is marked read here
+      const qIds = (l.questionIds || []).filter(x => BY_ID[x]), cIds = (l.cardIds || []).filter(x => CARD_BY_ID[x]);
+      const other = D.view === 'facts' ? 'practices' : 'facts', on = viewCount(l.id, other), mine = viewCount(l.id, D.view);
+      const shaky = D.slides.map((x, k) => [x, k]).filter(([x]) => (plan.shaky[l.id] || {})[x.pid]);
+      h = '<div class="dkick">Finish</div><h2>' + esc(l.title) + '</h2><p>' + (D.view === 'facts' ? plural(mine, 'key fact') : plural(mine, 'best practice')) + ' done. Progress counts the Learn lesson; this was extra.</p><div class="dfinish">' +
+        (D.back && D.back.deck ? '<button class="primary" data-act="back">Back to the lesson</button>' : '') +
+        (shaky.length ? '<div class="dkick" style="margin-top:4px">Slides you flagged shaky</div>' + shaky.map(([x, k]) => '<button class="ghost" data-act="jump" data-i="' + k + '">Slide ' + (k + 1) + '</button>').join('') : '') +
+        (on ? '<button data-act="view" data-view="' + other + '">' + (other === 'facts' ? 'Key facts ' : 'Best practices ') + on + '</button>' : '') +
+        (qIds.length ? '<button data-act="quiz">Drill ' + qIds.length + ' questions</button>' : '') + (cIds.length ? '<button data-act="cards">Cards ' + cIds.length + '</button>' : '') +
+        (D.back && D.back.page ? '<button data-act="back">Back to the page</button>' : '') + (!D.back ? '<button data-act="back">' + (deckFrom === 'index' ? 'All lessons' : 'Home') + '</button>' : '') + '</div>';
     } else if (s.k === 'term') {
       h = '<div class="dkick">Terminology</div><ul>' + s.items.map(x => { const t = x.t, p = t.indexOf(' = '), left = p > 0 ? t.slice(0, p) : '', isTerm = p > 0 && left.split(/\s+/).length <= 8 && !/[:;]|\.\s|\b(is|are|means|replaces)\b/.test(left); return '<li>' + (isTerm ? '<strong>' + inline(left) + '</strong> = ' + hlHtml(inline(t.slice(p + 3)), [], { left: 0 }) : hlHtml(inline(t), [], { left: 0 })) + '</li>'; }).join('') + '</ul>';
     } else if (s.k === 'sources') {
@@ -1419,11 +1493,13 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
       const fooled = D.slides.filter(x => x.k === 'trap' && D.fooled[x.pid]);
       const nx = ORDERED[ORDERED.findIndex(x => x.id === D.id) + 1];
       const shaky = D.slides.map((x, k) => [x, k]).filter(([x]) => (plan.shaky[l.id] || {})[x.pid]);
-      h = '<div class="dkick">Finish</div><h2>' + esc(l.title) + '</h2><p>' + (D.lean ? 'Key points done. The full text stays in the chapter sheet.' : 'Marked as read. Keep the facts warm:') + '</p><div class="dfinish">' +
+      const nf = D.lean ? 0 : viewCount(l.id, 'facts'), nb = D.lean ? 0 : viewCount(l.id, 'practices');
+      h = '<div class="dkick">Finish</div><h2>' + esc(l.title) + '</h2><p>' + (D.lean ? 'Key points done. The full text stays in the chapter sheet.' : 'Marked as read: this topic counts as done. The rest is optional practice:') + '</p><div class="dfinish">' +
         (D.plan ? '<button class="primary" data-act="plannext">Next in today\'s plan</button>' : '') +
         (shaky.length ? '<div class="dkick" style="margin-top:4px">Slides you flagged shaky</div>' + shaky.map(([x, k]) => '<button class="ghost" data-act="jump" data-i="' + k + '">' + esc((chapterOf(k) || {}).label || 'Slide') + ', slide ' + (k + 1) + '</button>').join('') : '') +
-        (cIds.length ? '<button class="' + (D.plan ? '' : 'primary') + '" data-act="cards">Drill these ' + cIds.length + ' cards</button>' : '') + (qIds.length ? '<button data-act="quiz">Quiz these ' + qIds.length + ' questions</button>' : '') +
-        (nx && !D.plan ? '<button data-act="next">Next lesson: ' + esc(nx.title) + '</button>' : '') + '<button class="ghost" data-act="page">Read as one page</button><button class="ghost" data-act="index">All lessons</button></div>' +
+        (nf ? '<button data-act="view" data-view="facts">Key facts ' + nf + '</button>' : '') + (nb ? '<button data-act="view" data-view="practices">Best practices ' + nb + '</button>' : '') +
+        (qIds.length ? '<button data-act="quiz">Drill ' + qIds.length + ' questions</button>' : '') + (cIds.length ? '<button data-act="cards">Cards ' + cIds.length + '</button>' : '') +
+        (nx && !D.plan ? '<button class="primary" data-act="next">Next lesson: ' + esc(nx.title) + '</button>' : '') + '<button class="ghost" data-act="page">Read as one page</button><button class="ghost" data-act="index">All lessons</button></div>' +
         (fooled.length ? '<div class="dkick" style="margin-top:8px">Traps you would have fallen for</div><div class="traps">' + fooled.map(t => { const m = /^\s*Trap:\s*([\s\S]*?)\s*Truth:\s*([\s\S]*)$/.exec(t.text); return '<div class="trap">' + (m ? '<span class="tr">Trap</span> ' + citeAll(l, inline(m[1])) + '<br><span class="tt">Truth</span> ' + citeAll(l, inline(m[2])) : citeAll(l, inline(t.text))) + '</div>'; }).join('') + '</div>' : '');
     }
     return '<div class="dwrap">' + h + '</div>';
@@ -1435,10 +1511,11 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (D.i !== D.shownI) {   // a new slide: the time on the previous one is a pace sample when it was one step forward
       // key-point (lean) slides feed the pace the plan prices and count as new material while the lesson is uncovered; a
       // full-lesson slide keeps its own pace (shown in Details) and counts as study time only
-      const fwd = D.max === prevMax + 1 && D.i === D.shownI + 1, e = fwd ? paceSample(D.lean ? 'slide' : 'slideFull', D.shownAt, D.hid, 2, 300) : null;
+      // a Key facts or Best practices view is extra: its time counts as study minutes, never as a pace sample or new material
+      const fwd = D.max === prevMax + 1 && D.i === D.shownI + 1, e = !fwd ? null : D.view ? (D.shownAt && !D.hid && (Date.now() - D.shownAt) / 1000 >= 2 && (Date.now() - D.shownAt) / 1000 <= 300 ? (Date.now() - D.shownAt) / 1000 : null) : paceSample(D.lean ? 'slide' : 'slideFull', D.shownAt, D.hid, 2, 300);
       if (D.max === prevMax + 1 && (e != null || (D.lean && D.plan))) {
         const d = dayRec(todayKey()), m = (e != null ? e : SEC().slide) / 60; d.m = (d.m || 0) + m;
-        if ((D.lean && D.plan && !covered(D.id)) || (!D.lean && !lessonRead[D.id])) d.mn = (d.mn || 0) + m;
+        if (!D.view && !D.lean && !lessonRead[D.id]) d.mn = (d.mn || 0) + m;   // only what topicMins charges: full Learn slides of an unread lesson
       }
       if (D.max === prevMax + 1) savePlan();
       D.shownAt = Date.now(); D.shownI = D.i; D.hid = false;
@@ -1454,12 +1531,11 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     D.chapters.forEach(c => { const el = document.createElement('i'); el.style.flex = String(Math.max(1, c.n)); const done = Math.max(0, Math.min(c.n, D.max - c.start + 1)); el.innerHTML = '<b style="width:' + Math.round(100 * done / c.n) + '%"></b>'; if (c === ch) el.className = 'cur'; el.title = c.label; el.addEventListener('click', () => renderDeck(c.start)); prog.appendChild(el); });
     $('dprev').disabled = D.i === 0;
     const trapHidden = s.k === 'trap' && deckStore.prefs.reveal && !D.revealed[s.pid] && /Truth:/.test(s.text);
-    const warmHidden = s.k === 'warm' && !D.flipped[s.pid];
     const stepsLeft = s.k === 'list' && s.steps && (D.revealed[s.pid] == null ? 1 : D.revealed[s.pid]) < s.items.length;
-    $('dnext').textContent = trapHidden ? 'Reveal the truth' : warmHidden ? 'Show the answer' : stepsLeft ? 'Next step' : s.k === 'finish' ? (ORDERED[ORDERED.findIndex(x => x.id === D.id) + 1] ? 'Next lesson' : 'All lessons') : s.k === 'title' ? 'Start' : 'Next';
+    $('dnext').textContent = trapHidden ? 'Reveal the truth' : stepsLeft ? 'Next step' : s.k === 'end' ? (D.back ? (D.back.page ? 'Back to the page' : 'Back to the lesson') : deckFrom === 'index' ? 'All lessons' : 'Home') : s.k === 'finish' ? (ORDERED[ORDERED.findIndex(x => x.id === D.id) + 1] ? 'Next lesson' : 'All lessons') : s.k === 'title' ? 'Start' : 'Next';
     if (s.k === 'finish') { if (!D.lean) markRead(D.id, true); else if (!plan.cov[D.id]) { plan.cov[D.id] = todayKey(); savePlan(); } if (D.plan) planDone('read', [], D.id); }
     // Shaky applies to content slides of exam objectives only (the plan acts on nothing else)
-    const sh = $('dshaky'), shOff = s.k === 'title' || s.k === 'finish' || !CORE_BY_LESSON[D.id]; sh.classList.toggle('off', shOff); sh.disabled = shOff; sh.setAttribute('aria-pressed', (plan.shaky[D.id] || {})[s.pid] ? 'true' : 'false');
+    const sh = $('dshaky'), shOff = s.k === 'title' || s.k === 'finish' || s.k === 'end' || !CORE_BY_LESSON[D.id]; sh.classList.toggle('off', shOff); sh.disabled = shOff; sh.setAttribute('aria-pressed', (plan.shaky[D.id] || {})[s.pid] ? 'true' : 'false');
     if (s.k === 'finish' && D.plan) { const nx = nextStep(); $('dnext').textContent = nx.k === 'done' ? 'Done for today' : nx.k === 'bonus' ? 'Bonus: weak questions' : 'Next: ' + nx.label; }
     savePos();
   }
@@ -1467,8 +1543,8 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (!D) return;
     const s = D.slides[D.i];
     if (s.k === 'trap' && deckStore.prefs.reveal && !D.revealed[s.pid] && /Truth:/.test(s.text)) { D.revealed[s.pid] = 1; renderDeck(D.i); return; }
-    if (s.k === 'warm' && !D.flipped[s.pid]) { D.flipped[s.pid] = 1; renderDeck(D.i); return; }
     if (s.k === 'list' && s.steps) { const shown = D.revealed[s.pid] == null ? 1 : D.revealed[s.pid]; if (shown < s.items.length) { D.revealed[s.pid] = shown + 1; renderDeck(D.i); return; } }
+    if (s.k === 'end') { leaveDeck(); return; }
     if (s.k === 'finish' && D.plan) { deckToPlan(); return; }
     if (s.k === 'finish') { const nx = ORDERED[ORDERED.findIndex(x => x.id === D.id) + 1]; if (nx) { delete deckStore.pos[D.id]; openDeck(nx.id, { at: 'start' }); } else { closeDeck(true); } return; }
     if (D.i < D.slides.length - 1) renderDeck(D.i + 1);
@@ -1478,20 +1554,21 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     $('dtoastText').textContent = text; $('dtoast').hidden = false;
     clearTimeout(D && D.toastTimer); if (D) D.toastTimer = setTimeout(() => { $('dtoast').hidden = true; }, 3500);
   }
+  function hideToast() { clearTimeout(D && D.toastTimer); $('dtoast').hidden = true; }   // a deck swap never carries the last deck's toast
   function showSheet() {
     const box = $('dchapters'); box.innerHTML = '';
     const cur = chapterOf(D.i);
     D.chapters.forEach(c => { const b = document.createElement('button'); b.className = 'dchrow' + (c === cur ? ' cur' : ''); b.innerHTML = '<span class="n">' + c.n + '</span><span class="t">' + esc(c.label) + '</span><span class="tick">' + (D.max >= c.start + c.n - 1 ? 'done' : D.max >= c.start ? 'here' : '') + '</span>'; b.addEventListener('click', () => { hideSheet(); renderDeck(c.start); }); box.appendChild(b); });
     $('dsize').querySelectorAll('button').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === deckStore.prefs.size));
     $('ddensity').querySelectorAll('button').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === deckStore.prefs.density));
-    $('dwrap').checked = !!deckStore.prefs.wrap; $('dreveal').checked = !!deckStore.prefs.reveal; $('dwarm').checked = !!deckStore.prefs.warm; $('drecall').checked = !!deckStore.prefs.recall; $('dlines').checked = !!deckStore.prefs.lines; $('dgist').checked = !!deckStore.prefs.gist; $('dtrim').checked = !!deckStore.prefs.trim; $('dfull').hidden = !D.lean;
+    $('dwrap').checked = !!deckStore.prefs.wrap; $('dreveal').checked = !!deckStore.prefs.reveal; $('drecall').checked = !!deckStore.prefs.recall; $('dlines').checked = !!deckStore.prefs.lines; $('dgist').checked = !!deckStore.prefs.gist; $('dtrim').checked = !!deckStore.prefs.trim; $('dfull').hidden = !D.lean; $('dpage').hidden = !!D.view;
     $('dsheet').hidden = false; $('dscrim').hidden = false; $('dtoast').hidden = true;
   }
   function hideSheet() { $('dsheet').hidden = true; $('dscrim').hidden = true; }
-  function recompileKeepPlace(repick) {
+  function recompileKeepPlace() {
     const oldCur = D.slides[D.i], oldMax = D.slides[D.max], on = D.slides.length, oi = D.i, om = D.max;
     const oc = chapterOf(D.i), ocr = (D.i - oc.start) / oc.n, mc = chapterOf(D.max), mcr = (D.max - mc.start) / mc.n;
-    clearDeckCounts(); if (repick) D.warm = pickWarm(LESSON_BY_ID[D.id]);
+    clearDeckCounts();
     buildDeck(D.id, true);
     const place = (old, idx, ch, r) => { let k = relocate(old, D.slides); if (k < 0) { const nc = D.chapters.find(c => c.ch === ch.ch); k = nc ? nc.start + Math.min(nc.n - 1, Math.floor(r * nc.n)) : Math.round(idx / on * D.slides.length); } return Math.max(0, Math.min(D.slides.length - 1, k)); };
     const k = place(oldCur, oi, oc, ocr); D.max = Math.max(k, place(oldMax, om, mc, mcr));
@@ -1511,7 +1588,6 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   $('dgist').addEventListener('change', e => { deckStore.prefs.gist = e.target.checked; saveDeck(); recompileKeepPlace(); });
   $('dtrim').addEventListener('change', e => { deckStore.prefs.trim = e.target.checked; saveDeck(); recompileKeepPlace(); });
   $('dlines').addEventListener('change', e => { deckStore.prefs.lines = e.target.checked; saveDeck(); recompileKeepPlace(); });
-  $('dwarm').addEventListener('change', e => { deckStore.prefs.warm = e.target.checked; saveDeck(); hideSheet(); recompileKeepPlace(true); });
   $('dshaky').addEventListener('click', () => {
     if (!D) return; const pid = D.slides[D.i].pid, m = plan.shaky[D.id] || (plan.shaky[D.id] = {});
     if (m[pid]) delete m[pid]; else m[pid] = todayKey();
@@ -1524,8 +1600,8 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (fp && fp.pid && fp.pid !== 'finish' && fp.t && dayKey(fp.t) >= todayKey() - 2) { openDeck(id, { plan: pl }); return; }   // a recent full read resumes there
     buildDeck(id, false, false, false); D.plan = pl; const m = D.slides.findIndex(x => x.pid === curPid && x.k !== 'title' && x.k !== 'finish'); if (m > 0) { renderDeck(m); return; } const k = D.slides.findIndex(x => x.sec != null); renderDeck(k > 0 ? k : 0); });
   $('dpage').addEventListener('click', () => { deckStore.prefs.view = 'page'; saveDeck(); const id = D.id; closeDeck(false); renderLessonPage(id); });
-  $('drestart').addEventListener('click', () => { hideSheet(); D.revealed = {}; D.fooled = {}; D.flipped = {}; D.max = 0; renderDeck(0); });
-  $('dtoastBtn').addEventListener('click', () => { $('dtoast').hidden = true; D.revealed = {}; D.fooled = {}; D.flipped = {}; D.max = 0; renderDeck(0); });
+  $('drestart').addEventListener('click', () => { hideSheet(); D.revealed = {}; D.fooled = {}; D.max = 0; renderDeck(0); });
+  $('dtoastBtn').addEventListener('click', () => { $('dtoast').hidden = true; D.revealed = {}; D.fooled = {}; D.max = 0; renderDeck(0); });
   $('dslide').addEventListener('click', e => {
     const mk = e.target.closest('mark.tok.hid'); if (mk) { if (mk.dataset.html != null) mk.innerHTML = mk.dataset.html; else mk.textContent = mk.dataset.tok; mk.classList.remove('hid'); return; }
     const li = e.target.closest('li[data-fact]'); if (li && !e.target.closest('a')) { li.classList.toggle('open'); return; }
@@ -1540,9 +1616,12 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     }
     const act = e.target.closest('button[data-act]'); if (!act) return;
     const l = LESSON_BY_ID[D.id], a = act.dataset.act;
-    if (a === 'cards') { const ids = (l.cardIds || []).filter(x => CARD_BY_ID[x]), back = { fromLesson: D.id, fromLean: D.lean, fromPlan: D.plan }; closeDeck(false); startCards(ids, back); }
-    else if (a === 'quiz') { const ids = (l.questionIds || []).filter(x => BY_ID[x]), back = { fromLesson: D.id, fromLean: D.lean, fromPlan: D.plan }; closeDeck(false); start('lesson', shuffle(ids), back); }
+    // from a view, the drill comes back to the view's end slide (never to the Learn finish slide, which would mark the lesson read)
+    if (a === 'cards') { const ids = (l.cardIds || []).filter(x => CARD_BY_ID[x]), back = { fromLesson: D.id, fromLean: D.lean, fromPlan: D.plan, fromView: D.view }; closeDeck(false); startCards(ids, back); }
+    else if (a === 'quiz') { const ids = (l.questionIds || []).filter(x => BY_ID[x]), back = { fromLesson: D.id, fromLean: D.lean, fromPlan: D.plan, fromView: D.view }; closeDeck(false); start('lesson', shuffle(ids), back); }
     else if (a === 'next') deckNext();
+    else if (a === 'view') openView(D.id, act.dataset.view, { fromDeck: true });
+    else if (a === 'back') leaveDeck();
     else if (a === 'plannext') deckToPlan();
     else if (a === 'jump') renderDeck(Number(act.dataset.i));
     else if (a === 'page') $('dpage').click();
@@ -1572,8 +1651,8 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     else if (e.key === 'ArrowLeft') deckPrev();
     else if (e.key === 'Home') renderDeck(0);
     else if (e.key === 'End') renderDeck(D.slides.length - 1);
-    else if (e.key === '[' || e.key === ']') { const k = ORDERED.findIndex(x => x.id === D.id) + (e.key === ']' ? 1 : -1); if (ORDERED[k]) openDeck(ORDERED[k].id); }
-    else if (e.key.toUpperCase() === 'P' ) $('dpage').click();
+    else if (e.key === '[' || e.key === ']') { const k = ORDERED.findIndex(x => x.id === D.id) + (e.key === ']' ? 1 : -1); if (ORDERED[k] && (!D.view || viewCount(ORDERED[k].id, D.view))) openDeck(ORDERED[k].id, D.view ? { view: D.view, back: null } : {}); }
+    else if (e.key.toUpperCase() === 'P' && !D.view) $('dpage').click();
   });
   $('lslides').addEventListener('click', () => { deckStore.prefs.view = 'slides'; saveDeck(); openDeck(LV); });
 
@@ -1604,9 +1683,9 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   function selectedCards() { const set = new Set(); for (const o of allObjs()) if (!pickOff.has(o.id)) o.cIds.forEach(x => set.add(x)); return [...set]; }
   function savePick() { save(PICK_KEY, { off: [...pickOff] }); }
   function mastery(ids) { const right = ids.filter(id => stats[id] && stats[id].last === 1).length; return pct(right, ids.length); }
-  // Topics on Home: no ticks; every section and objective carries its own Learn, Drill and Cards. Exam sections run in
-  // section order; their percent and bar are Learn + Drill progress (the Today checklist's measure), with the tracker's
-  // two-day recall as text; background topics show last-answer mastery
+  // Topics on Home: no ticks; every objective carries its own Learn, Drill, Cards, Key facts and Best practices. Exam sections
+  // run in section order; their percent and bar are Learn progress (the Today checklist's measure: a topic is done when its
+  // Learn lesson is finished), with the tracker's two-day recall as text; background topics show last-answer mastery
   let showBg = false;
   function examSections() { return CORE.sections.map(c => SECTIONS.find(s => s.name === c.name)).filter(Boolean); }
   function renderBlueprint() {
@@ -1628,7 +1707,9 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
             h += '<div class="tobj' + (isRead ? ' read' : '') + '"><div class="ohd"><span class="code">' + esc(o.code) + '</span><span class="ot">' + esc(o.title) + (keyPts ? ' <span class="kp">covered</span>' : '') + (core ? '<small>' + esc(topicState(core.lessonId)) + ' · recall ' + ov + '%</small>' : '') + '</span>' + (op != null ? '<span class="pct">' + op + '%' + (core ? '' : ' last try') + '</span>' : '') + '</div><div class="oacts">' +
               (o.lessonId ? '<button class="learn" data-a="learn" data-o="' + esc(o.id) + '">' + (isRead ? 'Learn again' : 'Learn') + '</button>' : '') +
               (o.qIds.length ? '<button data-a="drill" data-o="' + esc(o.id) + '">Drill ' + o.qIds.length + '</button>' : '') +
-              (o.cIds.length ? '<button data-a="cards" data-o="' + esc(o.id) + '">Cards ' + o.cIds.length + '</button>' : '') + '</div></div>';
+              (o.cIds.length ? '<button data-a="cards" data-o="' + esc(o.id) + '">Cards ' + o.cIds.length + '</button>' : '') +
+              (o.lessonId && viewCount(o.lessonId, 'facts') ? '<button data-a="facts" data-o="' + esc(o.id) + '">Key facts ' + viewCount(o.lessonId, 'facts') + '</button>' : '') +
+              (o.lessonId && viewCount(o.lessonId, 'practices') ? '<button data-a="practices" data-o="' + esc(o.id) + '">Best practices ' + viewCount(o.lessonId, 'practices') + '</button>' : '') + '</div></div>';
           }
           h += '<div class="oacts">' + (s.allQ.length ? '<button data-a="sdrill">Drill the section, ' + s.allQ.length + '</button>' : '') + (s.allC.length ? '<button data-a="scards">Section cards, ' + s.allC.length + '</button>' : '') + '</div></div>';
         }
@@ -1646,6 +1727,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const o = b.dataset.o ? sec.objs.find(x => x.id === b.dataset.o) : null, a = b.dataset.a;
     if (a === 'toggle') { if (openSecs.has(sec.name)) openSecs.delete(sec.name); else openSecs.add(sec.name); renderBlueprint(); }
     else if (a === 'learn' && o) openLesson(o.lessonId);
+    else if ((a === 'facts' || a === 'practices') && o) openView(o.lessonId, a);
     else if (a === 'drill' && o) start('drill', shuffle(o.qIds));
     else if (a === 'cards' && o) startCards(o.cIds);
     else if (a === 'sdrill') start('drill', shuffle(sec.allQ));
@@ -1698,6 +1780,8 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   $('lprev').addEventListener('click', () => stepLesson(-1));
   $('lnext').addEventListener('click', () => stepLesson(1));
   $('lread').addEventListener('click', () => { markRead(LV, !lessonRead[LV]); renderLessonPage(LV); });
+  $('lfacts').addEventListener('click', () => openView(LV, 'facts', { fromPage: true }));
+  $('lbp').addEventListener('click', () => openView(LV, 'practices', { fromPage: true }));
   $('lcards').addEventListener('click', () => { const l = LESSON_BY_ID[LV]; const ids = (l.cardIds || []).filter(x => CARD_BY_ID[x]); if (!ids.length) return; markRead(LV, true); startCards(ids, { fromLesson: LV }); });
   $('lquiz').addEventListener('click', () => { const l = LESSON_BY_ID[LV]; const ids = (l.questionIds || []).filter(x => BY_ID[x]); if (!ids.length) return; markRead(LV, true); start('lesson', shuffle(ids), { fromLesson: LV }); });
   document.addEventListener('keydown', e => {
@@ -1781,7 +1865,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const manual = !!(d.tgt && d.tgt.manual && d.tgt.step !== 'done' && Date.now() - (d.tgt.at || 0) < 2 * 3600e3);   // a topic tapped on today's checklist runs first, for two hours at most
     const saved = load(SESSION_KEY, null);
     if (!manual && saved && !saved.done && saved.mode !== 'exam' && dayKey(saved.startedAt) === t && answered(saved)) return { k: 'resume', label: 'Resume', sub: (MODE_NAME[saved.mode] || 'Quiz') + ', ' + answered(saved) + ' of ' + saved.ids.length + ' answered' };
-    const mid = Object.entries(deckStore.pos).map(([key, p]) => ({ id: key.replace(/~lean$/, ''), lean: /~lean$/.test(key), p }))
+    const mid = Object.entries(deckStore.pos).filter(([key]) => !/~(facts|practices)$/.test(key)).map(([key, p]) => ({ id: key.replace(/~lean$/, ''), lean: /~lean$/.test(key), p }))   // a view's place is never "Finish reading"
       .filter(x => CORE_BY_LESSON[x.id] && !lessonRead[x.id] && !(x.lean && plan.cov[x.id]) && x.p.i > 0 && x.p.i < x.p.n - 1 && x.p.t && dayKey(x.p.t) >= t - 2).sort((a, b) => b.p.t - a.p.t)[0];
     if (!manual && mid) { const pn = posNow(mid.id, mid.lean); return { k: 'lesson', id: mid.id, lean: mid.lean, label: 'Finish reading', sub: CORE_BY_LESSON[mid.id].code + ', slide ' + (pn.i + 1) + ' of ' + pn.n }; }
     const seen = new Set(d.seen || []), lane = reviewLane(CORE, st, t), answeredToday = id => stats[id] && dayKey(stats[id].t) === t;
@@ -1873,41 +1957,39 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   }
   // the exam time the plan assumes, on the card itself: one tap switches it
   function lateBtn() { return '<button class="ghost small" data-late="' + (plan.late ? '0' : '1') + '" aria-label="Exam time: ' + (plan.late ? 'evening' : 'morning') + '. Tap to switch to ' + (plan.late ? 'morning' : 'evening') + '">' + (plan.late ? 'Evening exam' : 'Morning exam') + ' · switch</button>'; }
-  // the checklist's unit: a topic is done when its full Learn lesson is finished and every question of its
-  // Drill (all the lesson's questions) is answered; flashcards are extra. Minutes: full-lesson slides left at your full-lesson
-  // pace, plus unanswered drill questions at your question pace (a question shared by topics is charged once, in order)
+  // <topic-progress>
+  // the checklist's unit: a topic is done when its Learn lesson is finished (lessonRead). Drill, Cards, Key facts and Best
+  // practices are optional and never block done. Minutes: Learn slides left at your full-lesson pace. The drill count is shown
+  // as information only. plan-check.js extracts this region and proves the rule with stubs
   function drillIds(lid) { const l = LESSON_BY_ID[lid]; return ((l && l.questionIds) || []).filter(x => BY_ID[x]); }
   function drillLeft(lid) { return drillIds(lid).filter(id => !(stats[id] && stats[id].a > 0)); }
   function learnDone(lid) { return !!lessonRead[lid]; }
   function learnSlidesLeft(lid) { if (learnDone(lid)) return 0; const pn = posNow(lid, false), n = deckCount(lid, false); return pn ? Math.max(1, n - pn.i) : n; }
-  function objDone(o) { return learnDone(o.lessonId) && !drillLeft(o.lessonId).length; }
-  function objStarted(o) { return learnDone(o.lessonId) || !!posNow(o.lessonId, false) || drillLeft(o.lessonId).length < drillIds(o.lessonId).length; }
-  function topicMins(o, seen) {
-    const S = SEC(); let sec = learnSlidesLeft(o.lessonId) * S.slideFull;
-    for (const id of drillLeft(o.lessonId)) { if (seen && seen.q) { if (seen.q.has(id)) continue; seen.q.add(id); } sec += S.q; }
-    return sec / 60;
-  }
+  function objDone(o) { return learnDone(o.lessonId); }
+  function objStarted(o) { return learnDone(o.lessonId) || !!posNow(o.lessonId, false); }
+  function topicMins(o, seen) { return learnSlidesLeft(o.lessonId) * SEC().slideFull / 60; }
   function objMin(o) { return topicMins(o, null); }
-  // how much of a topic is done, in seconds of work at your pace: full-lesson slides behind your place plus answered drill
-  // questions, so the checklist moves as you read instead of only when a topic finishes
+  // how much of a topic is done, in seconds of work at your pace: Learn slides behind your place over the whole lesson, so the
+  // checklist moves as you read instead of only when a topic finishes
   function topicWork(o) {
-    const lid = o.lessonId, S = SEC(), n = deckCount(lid, false), q = drillIds(lid).length;
-    return { tot: n * S.slideFull + q * S.q, done: (n - learnSlidesLeft(lid)) * S.slideFull + (q - drillLeft(lid).length) * S.q };
+    const lid = o.lessonId, S = SEC(), n = deckCount(lid, false);
+    return { tot: n * S.slideFull, done: (n - learnSlidesLeft(lid)) * S.slideFull };
   }
   function workPct(w) { return w.tot ? Math.floor(100 * w.done / w.tot) : 0; }
   // an exam section's progress by the same measure, summed over its topics; Topics and the 1 to 9 bar show it
   function secWork(name) { const s = CORE.sections.find(y => y.name === name); return (s ? s.objs : []).reduce((a, o) => { const w = topicWork(o); return { tot: a.tot + w.tot, done: a.done + w.done }; }, { tot: 0, done: 0 }); }
   function topicState(lid) {
     const dl = drillLeft(lid), dn = drillIds(lid).length, pn = posNow(lid, false);
-    return (learnDone(lid) ? 'Learn ✓' : pn ? 'Learn, slide ' + (pn.i + 1) + ' of ' + pn.n : 'Learn') + ' · ' + (dl.length ? 'Drill ' + (dn - dl.length) + '/' + dn : 'Drill ✓');
+    return (learnDone(lid) ? 'Learn ✓' : pn ? 'Learn, slide ' + (pn.i + 1) + ' of ' + pn.n : 'Learn') + (dn ? ' · Drill ' + (dn - dl.length) + '/' + dn + ' (optional)' : '');
   }
+  // </topic-progress>
   // a planned day as text: a whole section by name, part of a split one by its topic codes
   function dayTopics(x) { return x.secs.map(s => { const all = CORE.sections.find(y => y.name === s).objs.map(o => o.code), mine = x.codes.filter(c => all.indexOf(c) >= 0); return mine.length === all.length ? secLabel(s) : codeRuns(mine); }).join(' · '); }
   function secLabel(name) { const n = ((SECTIONS.find(y => y.name === name) || {}).num || '').replace(/\.0$/, ''); return (n ? n + ' ' : '') + name; }
   // today's topics: the objectives of the sections planned for today, pinned at the first look of the day (a new date, exam
   // time or cap plans the day again), so finished ones stay on the list and turn green
   function todayList(P, r, d) {
-    const key = 'learn+drill:' + P.ex + ':' + (plan.late ? 1 : 0) + ':' + plan.cap;
+    const key = 'learn:' + P.ex + ':' + (plan.late ? 1 : 0) + ':' + plan.cap;   // a new key plans the day again under the Learn-only rule, keeping done and started rows
     if (!Array.isArray(d.list) || !d.list.length || d.listKey !== key) {   // an empty list is never kept: it plans again
       const keep = (Array.isArray(d.list) ? d.list : []).filter(c => { const o = CORE.objs.find(x => x.code === c); return o && (objDone(o) || objStarted(o)); });
       const fresh = ((r.secDays && r.secDays[0]) || { codes: [] }).codes.filter(c => keep.indexOf(c) < 0);
@@ -1929,7 +2011,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (P.phase !== 'learn' && inFinal(P, R)) {
       const topics = CORE.objs.filter(o => !objDone(o)).length;
       return '<div class="tplan"><div class="tph"><b>Review day</b><span>ready-by day was ' + fmtWday(P.readyBy).split(',')[0] + '</span></div><div class="tpsub">' +
-        (r.left >= 1 ? topics + ' topics not finished, about ' + fmtMin(r.left) + '. Continue runs your review first.' : 'Every topic learned and drilled. Continue runs your review.') + '</div>' + btns + '</div>';
+        (r.left >= 1 ? topics + ' topics not finished, about ' + fmtMin(r.left) + '. Continue runs your review first.' : 'Every Learn lesson is finished. Continue runs your review.') + '</div>' + btns + '</div>';
     }
     const rowM = {}; for (const x of r.rows) rowM[x.code] = x.m;   // in-order minutes: a question shared by topics counts once
     const list = todayList(P, r, d), rows = list.map(o => ({ o, done: objDone(o), m: rowM[o.code] || 0 })), nDone = rows.filter(x => x.done).length;
@@ -1937,7 +2019,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const work = rows.reduce((a, x) => { const w = topicWork(x.o); return { tot: a.tot + w.tot, done: a.done + w.done }; }, { tot: 0, done: 0 }), pct = workPct(work);   // partial topics count
     let h = '<div class="tplan"><div class="tph"><b>Today · ' + fmtWday(P.t).split(',')[0] + '</b><span>' + (rows.length ? nDone + ' of ' + rows.length + ' done · ' + pct + '%' : 'nothing planned') + '</span></div>' +
       '<div class="tpbar" role="progressbar" aria-label="Today\'s topics" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-valuetext="' + pct + '% of today\'s work, ' + nDone + ' of ' + rows.length + ' topics done"><b style="width:' + pct + '%"></b></div>' +
-      '<div class="tpsub">' + (rows.length && nDone < rows.length ? 'About ' + fmtMin(leftToday) + ' left today · ' : '') + 'done = Learn lesson + Drill · ready by ' + fmtWday(P.readyBy).split(',')[0] + '</div>';
+      '<div class="tpsub">' + (rows.length && nDone < rows.length ? 'About ' + fmtMin(leftToday) + ' left today · ' : '') + 'done = Learn lesson finished · ready by ' + fmtWday(P.readyBy).split(',')[0] + '</div>';
     h += '<ul class="tlist">' + rows.map(x => topicRow(x.o, R, st, null, x.m)).join('');
     if (nDone === rows.length) { const nx = CORE.objs.find(o => list.indexOf(o) < 0 && !objDone(o)); if (nx) h += topicRow(nx, R, st, rows.length ? 'Get ahead:' : 'Start:', rowM[nx.code] || 0); }
     h += '</ul><div class="tdays">';
@@ -1949,20 +2031,19 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
         (up > plan.cap ? '<div><button class="tchip" data-rcap="' + up + '">Raise the cap to ' + fmtMin(up) + ' a day</button></div>' : ''); }
     return h + btns + '</div>';
   }
-  // the next part of one topic: its Learn lesson (from your saved place), then the drill questions not yet answered
+  // the next part of one topic: its Learn lesson from your saved place; nothing once the lesson is finished (drill is optional)
   function topicStep(o) {
     const lid = o.lessonId, name = o.code + ' ' + o.title;
     if (!learnDone(lid)) { const n = learnSlidesLeft(lid); return { k: 'learn', id: lid, label: 'Learn', sub: name + ', ' + n + ' slide' + (n === 1 ? '' : 's') + ' left, about ' + fmtMin(n * SEC().slideFull / 60) }; }
-    const ids = drillLeft(lid); if (ids.length) return { k: 'drill', ids: shuffle(ids), label: 'Drill', sub: name + ', ' + ids.length + ' question' + (ids.length === 1 ? '' : 's') };
     return null;
   }
-  // Continue on a study day: the first unfinished topic on today's list, then the next one in order
+  // Continue on a study day: the first unfinished Learn lesson on today's list, then the next one in section order
   function checklistStep(P) {
     const r = readyNow(P, planState()), list = todayList(P, r, dayRec(P.t));
     const o = list.find(x => !objDone(x)) || CORE.objs.find(x => !objDone(x));
     return o ? topicStep(o) : null;
   }
-  // a tapped topic runs its next part at once; a finished one opens its lesson to look back
+  // a tapped topic opens its Learn lesson at the saved place; a finished one opens its lesson to look back
   function startTopic(code) {
     const o = CORE.objs.find(x => x.code === code); if (!o) return;
     const st = topicStep(o); if (st) runStep(st); else openLesson(o.lessonId);
@@ -1970,17 +2051,17 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   function renderReady() {
     const P = planDates(); if (P.virtual) { closeReady(); return; }
     const st = planState(), R = rollups(CORE, st), r = readyNow(P, st), t = P.t, S = SEC();
-    const qL = CORE.objs.reduce((a, o) => a + drillLeft(o.lessonId).length, 0), cL = CORE.objs.filter(o => !learnDone(o.lessonId)).length, topics = CORE.objs.filter(o => !objDone(o)).length;
+    const cL = CORE.objs.filter(o => !learnDone(o.lessonId)).length, topics = CORE.objs.filter(o => !objDone(o)).length;
     const up = CAPS.find(c => c >= r.need) || CAPS[CAPS.length - 1];
     const teaching = P.phase === 'learn' || !inFinal(P, R);
     let h = '<div class="actions"><strong>Plan to ' + fmtWday(P.readyBy) + '</strong><div class="spacer"></div><button class="ghost small" id="rdClose">Close</button></div>' +
       '<p class="note">' + (plan.late ? 'Evening exam' : 'Morning exam') + ' on ' + fmtWday(P.ex) + ', so ' + fmtWday(P.readyBy) + ' is the last study day. ' + lateBtn() + '</p>' +
-      '<p class="note">A topic is done when its Learn lesson is finished and every question of its Drill is answered. Flashcards are extra. Not a pass prediction.</p>';
+      '<p class="note">A topic is done when its Learn lesson is finished. Drill, Cards, Key facts and Best practices are extra. Not a pass prediction.</p>';
     if (teaching) {
-      h += '<p>Left: <b>' + fmtMin(r.left) + '</b> (' + topics + ' topics: ' + cL + ' lessons to read, ' + qL + ' drill questions). That is <b>' + fmtMin(r.need) + ' a day</b> for ' + Math.max(1, P.learn) + ' study day' + (Math.max(1, P.learn) === 1 ? '' : 's') + ', review included. Your cap: ' + fmtMin(plan.cap) + ' a day.</p>';
+      h += '<p>Left: <b>' + fmtMin(r.left) + '</b> (' + topics + ' topics, ' + cL + ' lessons to read). That is <b>' + fmtMin(r.need) + ' a day</b> for ' + Math.max(1, P.learn) + ' study day' + (Math.max(1, P.learn) === 1 ? '' : 's') + ', review included. Your cap: ' + fmtMin(plan.cap) + ' a day.</p>';
       if (r.behind >= 1) h += '<p class="tbehind">Short by ' + fmtMin(r.behind) + ' a day at your cap.</p>' + (up > plan.cap ? '<div><button class="tchip" data-rcap="' + up + '">Raise the cap to ' + fmtMin(up) + '</button></div>' : '');
       h += '<h3 class="bkhead">Day by day, whole sections</h3><ul class="rdays">' + r.secDays.map(x => '<li><b>' + fmtWday(t + x.k) + (x.k === 0 ? ' (today)' : '') + '</b><span>' + (x.secs.length ? fmtMin(x.m) : 'review') + '</span><div>' + (x.secs.length ? esc(dayTopics(x)) : 'Nothing new fits at your cap') + '</div></li>').join('');
-    } else h += '<p>The ready-by day has passed, so the plan is review only. ' + (r.left >= 1 ? 'Not finished: ' + topics + ' topics (' + cL + ' lessons to read, ' + qL + ' drill questions), about ' + fmtMin(r.left) + '.' : 'Every topic is learned and drilled.') + '</p><h3 class="bkhead">Days left</h3><ul class="rdays">';
+    } else h += '<p>The ready-by day has passed, so the plan is review only. ' + (r.left >= 1 ? 'Not finished: ' + topics + ' topics (' + cL + ' lessons to read), about ' + fmtMin(r.left) + '.' : 'Every Learn lesson is finished.') + '</p><h3 class="bkhead">Days left</h3><ul class="rdays">';
     for (let k = teaching ? Math.max(1, P.learn) : 0; k <= P.dl; k++) {
       const ph = dayPhase(P.dl - k, P.F, P.late);
       h += '<li><b>' + fmtWday(t + k) + (k === 0 ? ' (today)' : '') + '</b><span>' + (ph === 'exam' ? 'exam' : 'review') + '</span><div>' + (ph === 'exam' ? (P.late ? 'Review due items, then a last look at your shakiest questions before the exam' : 'A last look at your shakiest questions') : ph === 'eve' ? 'Up to 30 minutes of review, nothing new' : 'Review only: missed and due items, then your weakest topics') + '</div></li>';
@@ -1990,7 +2071,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     const bySec = {}; for (const x of r.rows) bySec[x.sec] = (bySec[x.sec] || 0) + x.m;
     const pv = plan.pace || {}, measured = k => (pv[k] && pv[k].n >= 3);
     h += '<h3 class="bkhead">By section</h3><table class="rdsec">' + CORE.sections.map(s => { const sn = ((SECTIONS.find(y => y.name === s.name) || {}).num || '').replace(/\.0$/, ''); return '<tr><td>' + esc(sn) + '</td><td>' + esc(s.name) + '</td><td>' + s.weight + '%</td><td>' + Math.round(100 * R.sec[s.name]) + '% recall</td><td>' + (bySec[s.name] ? fmtMin(bySec[s.name]) + ' left' : 'covered') + '</td></tr>'; }).join('') + '</table>' +
-      '<p class="note">Times use your pace: ' + Math.round(S.slide) + ' s a key-point slide' + (measured('slide') ? '' : ' (a starting guess)') + ', ' + Math.round(S.card) + ' s a card' + (measured('card') ? '' : ' (a starting guess)') + ', ' + Math.round(S.q) + ' s a question' + (measured('q') ? '' : ' (a starting guess)') + '. The app times your slides, cards and questions as you go and updates these' + (pv.slideFull && pv.slideFull.n >= 3 ? '; full lessons run about ' + Math.round(pv.slideFull.s / pv.slideFull.n) + ' s a slide' : '') + '. A topic counts its full Learn lesson (with Skip repeats on) at your full-lesson pace, ' + Math.round(S.slideFull) + ' s a slide' + (measured('slideFull') ? '' : ' (a starting guess)') + ', plus its unanswered drill questions.</p>';
+      '<p class="note">Times use your pace: ' + Math.round(S.slide) + ' s a key-point slide' + (measured('slide') ? '' : ' (a starting guess)') + ', ' + Math.round(S.card) + ' s a card' + (measured('card') ? '' : ' (a starting guess)') + ', ' + Math.round(S.q) + ' s a question' + (measured('q') ? '' : ' (a starting guess)') + '. The app times your slides, cards and questions as you go and updates these' + (pv.slideFull && pv.slideFull.n >= 3 ? '; full lessons run about ' + Math.round(pv.slideFull.s / pv.slideFull.n) + ' s a slide' : '') + '. A topic counts its Learn lesson (with Skip repeats on) at your full-lesson pace, ' + Math.round(S.slideFull) + ' s a slide' + (measured('slideFull') ? '' : ' (a starting guess)') + '.</p>';
     $('rdSheet').innerHTML = h;
   }
   let rdOpener = null;
@@ -2071,7 +2152,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
   // the published build (version.json, never cached). The new build loads only on Home: at once if nothing was touched
   // while checking, otherwise the next time Home is reached, so a lesson, quiz, results screen or sheet is never cut short.
   // Progress lives in this browser's storage. A framed or local copy skips this.
-  const BUILD = '46fe2e943af4';
+  const BUILD = '17cdb4db31cb';
   let updateTo = null, lastCheck = 0, lastTouch = 0;
   ['pointerdown', 'keydown', 'focusin'].forEach(ev => document.addEventListener(ev, () => { lastTouch = Date.now(); }, true));
   window.addEventListener('scroll', () => { lastTouch = Date.now(); }, { passive: true });
@@ -2224,7 +2305,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
       html += '<tr><td>' + esc(d.name) + '</td><td class="num">' + d.weight + '%</td><td class="num">' + rs.length + '</td><td class="num">' + rr + '</td><td class="num" style="color:' + (dp >= PASS ? 'var(--good)' : 'var(--bad)') + '">' + dp + '%</td></tr>'; }
     t.innerHTML = html + '</tbody>';
     $('retryMissed').disabled = right === n;
-    $('rlesson').hidden = !(S.fromLesson && LESSON_BY_ID[S.fromLesson]);
+    $('rlesson').hidden = !(S.fromLesson && LESSON_BY_ID[S.fromLesson]); $('rlesson').textContent = backLabel(S);
     $('rdelta').textContent = deltaLine(S.snap);
     const nx = nextStep(); $('rnext').hidden = nx.k === 'done'; $('rnext').textContent = 'Next: ' + nx.label + (nx.sub ? ' · ' + nx.sub : '');
     $('retryMissed').classList.toggle('primary', $('rnext').hidden);
@@ -2261,7 +2342,7 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     if (!ids.length) return;
     // unseen first, then by box (shakiest first), random within
     ids = shuffle(ids).sort((a, b) => ((cardState[a] || { box: -1 }).box) - ((cardState[b] || { box: -1 }).box));
-    C = { ids, i: 0, flipped: false, again: [], rated: { 0: 0, 1: 0, 2: 0, 3: 0 }, total: ids.length, fromLesson: (opts && opts.fromLesson) || null, fromLean: !!(opts && opts.fromLean), fromPlan: (opts && opts.fromPlan) || null, plan: (opts && opts.plan) || null, snap: snapRoll() };
+    C = { ids, i: 0, flipped: false, again: [], rated: { 0: 0, 1: 0, 2: 0, 3: 0 }, total: ids.length, fromLesson: (opts && opts.fromLesson) || null, fromLean: !!(opts && opts.fromLean), fromView: (opts && opts.fromView) || null, fromPlan: (opts && opts.fromPlan) || null, plan: (opts && opts.plan) || null, snap: snapRoll() };
     $('csummary').hidden = true; $('card').parentElement.hidden = false;
     showView('cards'); renderCard();
   }
@@ -2301,20 +2382,22 @@ button.small { padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
     [['Reviewed', C.total], ['Again', C.rated[0]], ['Hard', C.rated[1]], ['Good', C.rated[2]], ['Easy', C.rated[3]]].forEach(([k, v]) => g.insertAdjacentHTML('beforeend', '<div><b>' + v + '</b><span>' + k + '</span></div>'));
     $('cagain').hidden = C.again.length === 0;
     $('cagain').textContent = 'Review the Again pile (' + C.again.length + ')';
-    $('clesson').hidden = !(C.fromLesson && LESSON_BY_ID[C.fromLesson]);
+    $('clesson').hidden = !(C.fromLesson && LESSON_BY_ID[C.fromLesson]); $('clesson').textContent = backLabel(C);
     if (C.plan) { planDone(C.plan, C.ids); C.plan = null; }
     $('cdelta').textContent = deltaLine(C.snap);
     const nx = nextStep(); $('cnext').hidden = nx.k === 'done'; $('cnext').textContent = 'Next: ' + nx.label + (nx.sub ? ' · ' + nx.sub : '');
     $('cagain').classList.toggle('primary', $('cnext').hidden);
     window.scrollTo(0, 0);
   }
-  const backToLesson = x => x && x.fromLesson ? openLesson(x.fromLesson, { at: 'finish', lean: x.fromLean, plan: x.fromPlan, forceDeck: x.fromLean }) : (renderHome(), showView('home'));
+  // the return button names where it goes: a drill or card review started from a view reopens that view's end slide
+  function backLabel(x) { return x && x.fromView === 'facts' ? 'Back to Key facts' : x && x.fromView === 'practices' ? 'Back to Best practices' : 'Back to the lesson'; }
+  const backToLesson = x =>x && x.fromLesson ? openLesson(x.fromLesson, { at: 'finish', lean: x.fromLean, plan: x.fromPlan, view: x.fromView || null, forceDeck: !!(x.fromLean || x.fromView) }) : (renderHome(), showView('home'));   // a view comes back to its end slide
   $('clesson').addEventListener('click', () => { const x = C; C = null; backToLesson(x); });
   $('rlesson').addEventListener('click', () => { const x = S; S = null; backToLesson(x); });
   $('card').addEventListener('click', flipCard);
   $('cflip').addEventListener('click', flipCard);
   $('crate').querySelectorAll('button').forEach(b => b.addEventListener('click', () => rateCard(Number(b.dataset.r))));
-  $('cagain').addEventListener('click', () => { const ids = shuffle(C.again); C = { ids, i: 0, flipped: false, again: [], rated: { 0: 0, 1: 0, 2: 0, 3: 0 }, total: ids.length, fromLesson: C.fromLesson, fromLean: C.fromLean, fromPlan: C.fromPlan }; $('csummary').hidden = true; $('card').parentElement.hidden = false; renderCard(); });
+  $('cagain').addEventListener('click', () => { const ids = shuffle(C.again); C = { ids, i: 0, flipped: false, again: [], rated: { 0: 0, 1: 0, 2: 0, 3: 0 }, total: ids.length, fromLesson: C.fromLesson, fromLean: C.fromLean, fromView: C.fromView, fromPlan: C.fromPlan }; $('csummary').hidden = true; $('card').parentElement.hidden = false; renderCard(); });
   $('chome').addEventListener('click', () => { C = null; renderHome(); showView('home'); });
   $('cnext').addEventListener('click', () => { C = null; runStep(nextStep()); });
   $('rnext').addEventListener('click', () => { S = null; runStep(nextStep()); });
